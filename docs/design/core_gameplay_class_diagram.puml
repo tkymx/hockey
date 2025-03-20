@@ -1,0 +1,147 @@
+@startuml
+
+' システム関連
+package "Core Systems" {
+    class GameManager {
+        - instance: GameManager
+        - gameState: GameState
+        - timer: float
+        + Instance(): GameManager
+        + StartGame()
+        + PauseGame()
+        + ResumeGame()
+        + EndGame()
+        + UpdateGameState()
+    }
+
+    class InputManager {
+        - instance: InputManager
+        + Instance(): InputManager
+        + GetTouchPosition(): Vector2
+        + GetDragDirection(): Vector2
+        + GetDragMagnitude(): float
+        + IsUITouched(): bool
+    }
+
+    class ScoreManager {
+        - currentScore: int
+        - comboCount: int
+        - highScore: int
+        + AddScore(points: int)
+        + UpdateCombo()
+        + ResetCombo()
+        + SaveHighScore()
+        + LoadHighScore()
+    }
+}
+
+' プレイヤー関連
+package "Player Components" {
+    class PlayerPuck {
+        - rigidbody: Rigidbody
+        - currentSize: float
+        - baseSpeed: float
+        - maxSpeed: float
+        - growthLevel: int
+        + Initialize()
+        + Move(direction: Vector2, force: float)
+        + Grow()
+        + OnCollisionEnter(collision: Collision)
+    }
+
+    class PuckController {
+        - puck: PlayerPuck
+        - inputManager: InputManager
+        - isDragging: bool
+        + HandleInput()
+        + StartDrag()
+        + UpdateDrag()
+        + EndDrag()
+    }
+
+    class GrowthSystem {
+        - currentPoints: int
+        - growthThresholds: int[]
+        - growthMultipliers: float[]
+        + AddPoints(points: int)
+        + CheckGrowth()
+        + ApplyGrowth()
+    }
+}
+
+' 破壊可能オブジェクト関連
+package "Destructible Objects" {
+    abstract class DestructibleObject {
+        # size: float
+        # durability: float
+        # pointValue: int
+        # materialType: MaterialType
+        + {abstract} TakeDamage(damage: float)
+        + {abstract} Destroy()
+        # CalculateImpact(collision: Collision): float
+    }
+
+    class SmallObject {
+        + TakeDamage(damage: float)
+        + Destroy()
+    }
+
+    class MediumObject {
+        + TakeDamage(damage: float)
+        + Destroy()
+    }
+
+    class LargeObject {
+        + TakeDamage(damage: float)
+        + Destroy()
+    }
+
+    class ObjectFactory {
+        + CreateObject(type: ObjectType, size: Size): DestructibleObject
+        - InitializeObject(obj: DestructibleObject)
+    }
+}
+
+' エフェクト・サウンド関連
+package "Effects & Feedback" {
+    class EffectManager {
+        - effectPool: Dictionary<EffectType, Queue<ParticleSystem>>
+        + PlayEffect(type: EffectType, position: Vector3)
+        + PlayDestructionEffect(materialType: MaterialType, position: Vector3)
+        - CreateEffectPool(type: EffectType)
+    }
+
+    class SoundManager {
+        - audioSources: Dictionary<SoundType, AudioSource>
+        + PlaySound(type: SoundType)
+        + PlaySoundAtPosition(type: SoundType, position: Vector3)
+        + SetVolume(type: SoundType, volume: float)
+    }
+
+    class CameraController {
+        - target: Transform
+        - offset: Vector3
+        - smoothSpeed: float
+        + FollowTarget()
+        + Shake(duration: float, magnitude: float)
+        + ZoomToSize(targetSize: float, duration: float)
+    }
+}
+
+' 関係性
+GameManager "1" *-- "1" ScoreManager
+GameManager "1" *-- "1" InputManager
+GameManager "1" *-- "1" CameraController
+GameManager "1" *-- "1" EffectManager
+GameManager "1" *-- "1" SoundManager
+
+PlayerPuck "1" *-- "1" GrowthSystem
+PuckController "1" *-- "1" PlayerPuck
+PuckController "1" o-- "1" InputManager
+
+DestructibleObject <|-- SmallObject
+DestructibleObject <|-- MediumObject
+DestructibleObject <|-- LargeObject
+ObjectFactory ..> DestructibleObject : creates
+
+@enduml
