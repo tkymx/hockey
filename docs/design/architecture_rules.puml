@@ -1,0 +1,94 @@
+@startuml
+
+package "Dependencies Rule" {
+    note "Outer layers can only depend on inner layers\nInner layers cannot depend on outer layers" as DependencyRule
+}
+
+package "Core Layer" {
+    package "Domain" {
+        interface "IUseCase" {
+            + Execute()
+        }
+        
+        class "Model" {
+            - data: EntityData
+            + UpdateState()
+        }
+    }
+    
+    package "Application" {
+        class "UseCase" {
+            - model: Model
+            + Execute()
+            + UpdateModelState()
+            # ValidateBusinessRules()
+        }
+    }
+}
+
+package "Presentation Layer" {
+    class "Presenter" {
+        - useCase: IUseCase
+        - viewModel: ViewModel
+        - view: IView
+        + HandleUserInput()
+        + UpdateViewModel()
+        + NotifyViewModelChanged()
+    }
+    
+    class "ViewModel" {
+        - displayData: ViewData
+        + UpdateDisplayData()
+    }
+}
+
+package "UI Layer" {
+    interface "IView" {
+        + Initialize()
+        + Render()
+        + BindEvents()
+    }
+    
+    class "View" {
+        - viewModel: ViewModel
+        + Initialize()
+        + Render()
+        + BindEvents()
+        # UpdateUnityUI()
+    }
+}
+
+package "Infrastructure" {
+    class "Installer" {
+        + InstallBindings()
+        - BindUseCase()
+        - BindPresenter()
+        - BindView()
+    }
+}
+
+' Dependencies
+UseCase --|> IUseCase
+UseCase --> Model
+Presenter --> IUseCase
+Presenter --> ViewModel
+Presenter --> IView
+View --|> IView
+View --> ViewModel
+Installer --> UseCase
+Installer --> Presenter
+Installer --> View
+
+note "1. UseCase は Model操作とビジネスロジックのみを実装" as N1
+note "2. Presenter は ViewModel を通じて View とデータをやり取り" as N2
+note "3. View は ViewModel のデータを Unity UI に反映" as N3
+note "4. 依存関係は外層から内層への一方向のみ" as N4
+note "5. イベント処理は Presenter が制御" as N5
+
+UseCase .. N1
+Presenter .. N2
+View .. N3
+DependencyRule .. N4
+Presenter .. N5
+
+@enduml
