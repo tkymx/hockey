@@ -1,147 +1,203 @@
 @startuml
 
-' システム関連
-package "Core Systems" {
-    class GameManager {
-        - instance: GameManager
-        - gameState: GameState
-        - timer: float
-        + Instance(): GameManager
+' Core Layer (Domain)
+package "Domain" {
+    interface "IGameUseCase" {
         + StartGame()
         + PauseGame()
         + ResumeGame()
         + EndGame()
-        + UpdateGameState()
     }
 
-    class InputManager {
-        - instance: InputManager
-        + Instance(): InputManager
-        + GetTouchPosition(): Vector2
-        + GetDragDirection(): Vector2
-        + GetDragMagnitude(): float
-        + IsUITouched(): bool
+    interface "IPuckUseCase" {
+        + Move(direction: Vector2, force: float)
+        + Grow()
+        + CheckCollision(collision: Collision)
     }
 
-    class ScoreManager {
-        - currentScore: int
-        - comboCount: int
-        - highScore: int
+    interface "IScoreUseCase" {
         + AddScore(points: int)
         + UpdateCombo()
         + ResetCombo()
-        + SaveHighScore()
-        + LoadHighScore()
+    }
+
+    class "GameModel" {
+        - gameState: GameState
+        - timer: float
+        - currentScore: int
+        - comboCount: int
+        + UpdateState(state: GameState)
+        + UpdateTimer(time: float)
+        + UpdateScore(score: int)
+    }
+
+    class "PuckModel" {
+        - position: Vector2
+        - size: float
+        - speed: float
+        - growthLevel: int
+        + UpdatePosition(pos: Vector2)
+        + UpdateSize(newSize: float)
+        + UpdateGrowthLevel(level: int)
+    }
+
+    class "DestructibleObjectModel" {
+        - size: float
+        - durability: float
+        - pointValue: int
+        - position: Vector2
+        + TakeDamage(damage: float)
+        + GetPointValue(): int
     }
 }
 
-' プレイヤー関連
-package "Player Components" {
-    class PlayerPuck {
-        - rigidbody: Rigidbody
-        - currentSize: float
-        - baseSpeed: float
-        - maxSpeed: float
-        - growthLevel: int
-        + Initialize()
+' Application Layer
+package "Application" {
+    class "GameUseCase" {
+        - gameModel: GameModel
+        + Execute()
+        + StartGame()
+        + PauseGame()
+        + EndGame()
+        # ValidateGameState()
+    }
+
+    class "PuckUseCase" {
+        - puckModel: PuckModel
+        - scoreUseCase: IScoreUseCase
         + Move(direction: Vector2, force: float)
         + Grow()
-        + OnCollisionEnter(collision: Collision)
+        + HandleCollision(collision: Collision)
+        # CalculateGrowthProgress()
     }
 
-    class PuckController {
-        - puck: PlayerPuck
-        - inputManager: InputManager
-        - isDragging: bool
-        + HandleInput()
-        + StartDrag()
-        + UpdateDrag()
-        + EndDrag()
-    }
-
-    class GrowthSystem {
-        - currentPoints: int
-        - growthThresholds: int[]
-        - growthMultipliers: float[]
-        + AddPoints(points: int)
-        + CheckGrowth()
-        + ApplyGrowth()
+    class "ScoreUseCase" {
+        - gameModel: GameModel
+        + AddScore(points: int)
+        + UpdateCombo()
+        + ResetCombo()
+        # CalculateComboBonus()
     }
 }
 
-' 破壊可能オブジェクト関連
-package "Destructible Objects" {
-    abstract class DestructibleObject {
-        # size: float
-        # durability: float
-        # pointValue: int
-        # materialType: MaterialType
-        + {abstract} TakeDamage(damage: float)
-        + {abstract} Destroy()
-        # CalculateImpact(collision: Collision): float
+' Presentation Layer
+package "Presentation" {
+    class "GamePresenter" {
+        - gameUseCase: IGameUseCase
+        - gameViewModel: GameViewModel
+        - gameView: IGameView
+        + HandleGameStart()
+        + HandleGamePause()
+        + UpdateGameState()
     }
 
-    class SmallObject {
-        + TakeDamage(damage: float)
-        + Destroy()
+    class "PuckPresenter" {
+        - puckUseCase: IPuckUseCase
+        - puckViewModel: PuckViewModel
+        - puckView: IPuckView
+        + HandleInput(input: InputData)
+        + UpdatePuckState()
     }
 
-    class MediumObject {
-        + TakeDamage(damage: float)
-        + Destroy()
+    class "GameViewModel" {
+        - gameState: GameState
+        - score: int
+        - timer: float
+        + UpdateDisplayData()
     }
 
-    class LargeObject {
-        + TakeDamage(damage: float)
-        + Destroy()
-    }
-
-    class ObjectFactory {
-        + CreateObject(type: ObjectType, size: Size): DestructibleObject
-        - InitializeObject(obj: DestructibleObject)
+    class "PuckViewModel" {
+        - position: Vector2
+        - size: float
+        - growthLevel: int
+        + UpdateDisplayData()
     }
 }
 
-' エフェクト・サウンド関連
-package "Effects & Feedback" {
-    class EffectManager {
-        - effectPool: Dictionary<EffectType, Queue<ParticleSystem>>
+' UI Layer
+package "Unity UI Layer" {
+    interface "IGameView" {
+        + Initialize()
+        + UpdateUI()
+        + ShowGameOver()
+    }
+
+    interface "IPuckView" {
+        + Initialize()
+        + UpdatePosition()
+        + UpdateSize()
+        + PlayEffects()
+    }
+
+    class "GameView" {
+        - gameViewModel: GameViewModel
+        + Initialize()
+        + UpdateUI()
+        + ShowGameOver()
+        # RenderUnityUI()
+    }
+
+    class "PuckView" {
+        - puckViewModel: PuckViewModel
+        - effectManager: EffectManager
+        + Initialize()
+        + UpdatePosition()
+        + UpdateSize()
+        + PlayEffects()
+    }
+}
+
+' Infrastructure Layer
+package "Infrastructure" {
+    class "GameInstaller" {
+        + InstallBindings()
+        - BindUseCases()
+        - BindPresenters()
+        - BindViews()
+    }
+
+    class "UnityInputSystem" {
+        + GetTouchPosition(): Vector2
+        + GetDragDirection(): Vector2
+        + IsUITouched(): bool
+    }
+
+    class "EffectManager" {
         + PlayEffect(type: EffectType, position: Vector3)
-        + PlayDestructionEffect(materialType: MaterialType, position: Vector3)
-        - CreateEffectPool(type: EffectType)
+        + PlayDestructionEffect(position: Vector3)
     }
 
-    class SoundManager {
-        - audioSources: Dictionary<SoundType, AudioSource>
+    class "SoundManager" {
         + PlaySound(type: SoundType)
         + PlaySoundAtPosition(type: SoundType, position: Vector3)
-        + SetVolume(type: SoundType, volume: float)
-    }
-
-    class CameraController {
-        - target: Transform
-        - offset: Vector3
-        - smoothSpeed: float
-        + FollowTarget()
-        + Shake(duration: float, magnitude: float)
-        + ZoomToSize(targetSize: float, duration: float)
     }
 }
 
-' 関係性
-GameManager "1" *-- "1" ScoreManager
-GameManager "1" *-- "1" InputManager
-GameManager "1" *-- "1" CameraController
-GameManager "1" *-- "1" EffectManager
-GameManager "1" *-- "1" SoundManager
+' Dependencies
+GameUseCase --|> IGameUseCase
+PuckUseCase --|> IPuckUseCase
+ScoreUseCase --|> IScoreUseCase
 
-PlayerPuck "1" *-- "1" GrowthSystem
-PuckController "1" *-- "1" PlayerPuck
-PuckController "1" o-- "1" InputManager
+GamePresenter --> IGameUseCase
+GamePresenter --> GameViewModel
+GamePresenter --> IGameView
 
-DestructibleObject <|-- SmallObject
-DestructibleObject <|-- MediumObject
-DestructibleObject <|-- LargeObject
-ObjectFactory ..> DestructibleObject : creates
+PuckPresenter --> IPuckUseCase
+PuckPresenter --> PuckViewModel
+PuckPresenter --> IPuckView
+
+GameView --|> IGameView
+PuckView --|> IPuckView
+
+GameView --> GameViewModel
+PuckView --> PuckViewModel
+
+GameInstaller --> GameUseCase
+GameInstaller --> PuckUseCase
+GameInstaller --> ScoreUseCase
+GameInstaller --> GamePresenter
+GameInstaller --> PuckPresenter
+GameInstaller --> GameView
+GameInstaller --> PuckView
 
 @enduml
