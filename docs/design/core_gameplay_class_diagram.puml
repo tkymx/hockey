@@ -1,4 +1,4 @@
-@startuml
+@startuml core_gameplay_class_diagram
 
 ' Core Layer (Domain)
 package "Domain" {
@@ -48,6 +48,7 @@ package "Domain" {
         - position: Vector2
         + TakeDamage(damage: float)
         + GetPointValue(): int
+        + Move(position: Vector2)
     }
 }
 
@@ -77,6 +78,13 @@ package "Application" {
         + UpdateCombo()
         + ResetCombo()
         # CalculateComboBonus()
+    }
+
+    class "DestructibleObjectUseCase" {
+        - destructibleObjectModel: DestructibleObjectModel
+        + Move(position: Vector2)
+        + TakeDamage(damage: float)
+        + HandleCollision(collision: Collision)
     }
 }
 
@@ -112,6 +120,22 @@ package "Presentation" {
         - growthLevel: int
         + UpdateDisplayData()
     }
+
+    class "DestructibleObjectPresenter" {
+        - objectUseCase: DestructibleObjectUseCase
+        - objectViewModel: DestructibleObjectViewModel
+        - objectView: IDestructibleObjectView
+        + Initialize(position: Vector2, type: ObjectType)
+        + HandleCollision(collision: Collision)
+        + UpdateObjectState()
+    }
+
+    class "DestructibleObjectViewModel" {
+        - position: Vector2
+        - size: float
+        - state: DestructibleObjectState
+        + UpdateDisplayData()
+    }
 }
 
 ' UI Layer
@@ -129,6 +153,12 @@ package "Unity UI Layer" {
         + PlayEffects()
     }
 
+    interface "IDestructibleObjectView" {
+        + Initialize(type: ObjectType)
+        + UpdateVisualState(state: DestructibleObjectState)
+        + PlayDestructionEffect()
+    }
+
     class "GameView" {
         - gameViewModel: GameViewModel
         + Initialize()
@@ -144,6 +174,17 @@ package "Unity UI Layer" {
         + UpdatePosition()
         + UpdateSize()
         + PlayEffects()
+    }
+
+    class "DestructibleObjectView" {
+        - objectViewModel: DestructibleObjectViewModel
+        - meshRenderer: MeshRenderer
+        - collider: Collider
+        - effectManager: EffectManager
+        + Initialize(type: ObjectType)
+        + UpdateVisualState(state: DestructibleObjectState)
+        + PlayDestructionEffect()
+        # UpdateCollider()
     }
 }
 
@@ -171,6 +212,13 @@ package "Infrastructure" {
         + PlaySound(type: SoundType)
         + PlaySoundAtPosition(type: SoundType, position: Vector3)
     }
+
+    class "ObjectPoolManager" {
+        - pools: Dictionary<ObjectType, ObjectPool>
+        + GetObject(type: ObjectType): DestructibleObjectView
+        + ReturnObject(obj: DestructibleObjectView)
+        - CreatePool(type: ObjectType)
+    }
 }
 
 ' Dependencies
@@ -186,18 +234,28 @@ PuckPresenter --> IPuckUseCase
 PuckPresenter --> PuckViewModel
 PuckPresenter --> IPuckView
 
+DestructibleObjectPresenter --> DestructibleObjectUseCase
+DestructibleObjectPresenter --> DestructibleObjectViewModel
+DestructibleObjectPresenter --> IDestructibleObjectView
+
 GameView --|> IGameView
 PuckView --|> IPuckView
+DestructibleObjectView --|> IDestructibleObjectView
 
 GameView --> GameViewModel
 PuckView --> PuckViewModel
+DestructibleObjectView --> DestructibleObjectViewModel
 
 GameInstaller --> GameUseCase
 GameInstaller --> PuckUseCase
 GameInstaller --> ScoreUseCase
 GameInstaller --> GamePresenter
 GameInstaller --> PuckPresenter
+GameInstaller --> DestructibleObjectPresenter
 GameInstaller --> GameView
 GameInstaller --> PuckView
+GameInstaller --> DestructibleObjectView
+
+ObjectPoolManager --> DestructibleObjectView
 
 @enduml
