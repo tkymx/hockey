@@ -9,22 +9,12 @@ public class PuckCollisionHandler : MonoBehaviour
         puckPresenter = presenter;
     }
     
-    private void OnCollisionEnter2D(Collision2D collision)
+    private void OnCollisionEnter(Collision collision)
     {
         if (puckPresenter != null)
         {
-            // 2D衝突情報を3D衝突情報に変換して渡す
-            puckPresenter.HandleCollision(Convert2DTo3DCollision(collision));
+            // 3D衝突情報を直接渡す
+            puckPresenter.HandleCollision(collision);
         }
-    }
-    
-    // Unity 2Dから3Dへの衝突情報変換ヘルパー
-    private Collision Convert2DTo3DCollision(Collision2D collision2D)
-    {
-        // 実際のプロジェクトでは適切な変換ロジックを実装する必要があります
-        // 簡易的な実装として、GameObjectのみ設定します
-        Collision collision = new Collision();
-        collision.gameObject = collision2D.gameObject;
-        return collision;
     }
 }
