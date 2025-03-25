@@ -85,12 +85,15 @@ package "Model" {
     - _speed: float
     - _growthLevel: int
     - _position: Vector3
+    - _strikeForce: float
     + Initialize()
     + Move(direction: Vector2)
     + Grow()
     + GetSize(): float
     + GetPosition(): Vector3
     + SetPosition(position: Vector3)
+    + Strike(puck: Puck, direction: Vector3)
+    + GetStrikeForce(): float
   }
 
   class Stage {
@@ -119,6 +122,26 @@ package "Model" {
     + ReturnObject(objectType: string, obj: GameObject)
     + ExpandPool(objectType: string, count: int)
   }
+
+  class Puck {
+    - _position: Vector3
+    - _velocity: Vector3
+    - _mass: float
+    - _radius: float
+    - _isMoving: bool
+    - _frictionCoefficient: float
+    + Initialize()
+    + ApplyForce(force: Vector3)
+    + Move()
+    + GetPosition(): Vector3
+    + SetPosition(position: Vector3)
+    + GetVelocity(): Vector3
+    + IsMoving(): bool
+    + CheckCollision(gameObject: GameObject): bool
+    + HandleCollision(gameObject: GameObject)
+    + ApplyFriction()
+    + Reset()
+  }
 }
 
 package "View" {
@@ -144,6 +167,18 @@ package "View" {
     + PlayParticleEffect()
   }
 
+  class PuckView {
+    - _puckModel: Puck
+    - _sprite: SpriteRenderer
+    - _trailRenderer: TrailRenderer
+    - _puckObject: GameObject
+    + Initialize(puck: Puck)
+    + UpdateVisuals()
+    + PlayHitEffect()
+    + PlayTrailEffect(enabled: bool)
+    + MovePuck(position: Vector3)
+  }
+
   class GameHUDView {
     - _scoreText: Text
     - _timeText: Text
@@ -154,16 +189,11 @@ package "View" {
   }
 
   class MainMenuView {
-    + Show()
-    + Hide()
     + OnStartButtonClicked()
-    + OnOptionsButtonClicked()
     + OnExitButtonClicked()
   }
 
   class PauseMenuView {
-    + Show()
-    + Hide()
     + OnResumeButtonClicked()
     + OnRestartButtonClicked()
     + OnMainMenuButtonClicked()
@@ -171,11 +201,16 @@ package "View" {
 
   class GameOverMenuView {
     - _finalScoreText: Text
-    - _highScoreText: Text
-    + Show(score: int, highScore: int)
-    + Hide()
+    + DisplayFinalScore(score: int)
     + OnRestartButtonClicked()
     + OnMainMenuButtonClicked()
+  }
+
+  class StageView {
+    - _stageModel: Stage
+    - _stageObject: GameObject  ' 3D ステージオブジェクト
+    + Initialize(stage: Stage)
+    + DisplayStage()  ' ステージを表示する
   }
 
   class CameraController {
@@ -185,13 +220,6 @@ package "View" {
     + Follow(target: Transform)
     + Zoom(zoomLevel: float)
     + ResetZoom()
-  }
-
-  class StageView {
-    - _stageModel: Stage
-    - _stageObject: GameObject  ' 3D ステージオブジェクト
-    + Initialize(stage: Stage)
-    + DisplayStage()  ' ステージを表示する
   }
 }
 
@@ -204,6 +232,7 @@ package "Controller" {
     + IsPauseButtonPressed(): bool
     + Enable()
     + Disable()
+    + GetStrikeInput(): Vector3
   }
 
   class PlayerController {
@@ -213,6 +242,17 @@ package "Controller" {
     + Initialize(player: Player, playerView: PlayerView)
     + ProcessInput()
     + UpdatePlayerAndView()
+    + HandleStrike()
+  }
+
+  class PuckController {
+    - _puck: Puck
+    - _puckView: PuckView
+    + Initialize(puck: Puck, puckView: PuckView)
+    + UpdatePuckPhysics()
+    + CheckCollisions(gameObjects: List<GameObject>)
+    + HandleWallCollisions()
+    + ResetPuck(position: Vector3)
   }
 
   class CollisionController {
@@ -232,12 +272,15 @@ GameManager --> UIManager
 GameManager --> ScoreManager
 GameManager --> TimeManager
 GameManager --> AudioManager
+GameManager --> PuckController
 
 ' Model relationships
 PlayerManager --> Player
 StageManager --> Stage
 StageManager --> ObjectPool
 Stage --> GameObject
+Player --> Puck
+Puck --> GameObject
 
 ' View relationships
 PlayerManager --> PlayerView
@@ -246,16 +289,20 @@ UIManager --> MainMenuView
 UIManager --> PauseMenuView
 UIManager --> GameOverMenuView
 StageManager --> StageView
+PuckController --> PuckView
 
 ' Controller relationships
 PlayerManager --> PlayerController
 PlayerController --> InputController
 PlayerController --> CollisionController
 PlayerController --> MouseInputController
+PuckController --> Puck
+PuckController --> CollisionController
 
 ' Model-View relationships
 PlayerView --> Player
 GameObjectView --> GameObject
 StageView --> Stage
+PuckView --> Puck
 
 @enduml
