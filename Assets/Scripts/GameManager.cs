@@ -99,7 +99,7 @@ public class GameManager : MonoBehaviour
         }
 
         // PuckControllerが必要なコンポーネントを持っているか確認
-        Puck puck = puckController.GetComponentInChildren<Puck>();
+        Puck puck = puckController.Puck;
         
         if (puck == null)
         {

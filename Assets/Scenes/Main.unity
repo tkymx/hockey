@@ -394,7 +394,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bde555de764cf431b9a8a037a4d50e26, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  stagePrefab: {fileID: 4681492334254127162, guid: 889571b22a6654de18b13b538e7143e6, type: 3}
+  stagePrefab: {fileID: 8776365056117761346, guid: 889571b22a6654de18b13b538e7143e6, type: 3}
 --- !u!4 &1379090166
 Transform:
   m_ObjectHideFlags: 0
@@ -441,9 +441,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   puck: {fileID: 38107689}
   puckView: {fileID: 38107688}
-  collisionLayers:
-    serializedVersion: 2
-    m_Bits: 0
   resetDelay: 3
 --- !u!4 &1479409926
 Transform:
@@ -667,12 +664,6 @@ MonoBehaviour:
   mouseInputController: {fileID: 1690574113}
   puckController: {fileID: 1479409925}
   puckSpawnPoint: {fileID: 0}
-  puckLayer:
-    serializedVersion: 2
-    m_Bits: 0
-  objectLayer:
-    serializedVersion: 2
-    m_Bits: 0
 --- !u!4 &2050831257
 Transform:
   m_ObjectHideFlags: 0

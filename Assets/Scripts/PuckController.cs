@@ -10,7 +10,9 @@ public class PuckController : MonoBehaviour
     private Vector3 initialPosition;
     private bool isResetting = false;
     private float resetTimer = 0f;
-    
+
+    public Puck Puck => puck;
+
     public void Initialize(Puck puckInstance, PuckView puckViewInstance)
     {
         puck = puckInstance;
@@ -71,33 +73,13 @@ public class PuckController : MonoBehaviour
         isResetting = true;
         resetTimer = resetDelay;
     }
-    
-    // プレイヤーからパックに力を加える
-    public void StrikeFromPlayer(Player player, Vector3 direction)
-    {
-        if (puck == null) return;
         
-        // 方向ベクトルを正規化
-        direction.Normalize();
-        
-        // プレイヤーの打撃力を取得
-        float strikeForce = player.GetStrikeForce();
-        
-        // パックに力を適用
-        Vector3 force = direction * strikeForce;
-        puck.ApplyForce(force);
-        
-        // パックのヒットエフェクトを再生
-        puckView.PlayHitEffect(puck.transform.position);
-        puckView.PlayTrailEffect(true);
-    }
-    
     // パックをリセットする
     public void ResetPuck(Vector3 position)
     {
         if (puck == null) return;
         
-        puck.Reset(position);
+        puck.ResetPosition(position); // Resetをnew ResetPositionに更新
         puckView.PlayTrailEffect(false);
     }
     

@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dd38195e50d0c4fc6a23509c16cfb799, type: 3}
   m_Name: HockeyPrefabManagerSettings
   m_EditorClassIdentifier: 
-  destructiblePrefab: {fileID: 2986190890503952136, guid: 9f28ed5a3e02146bea372d3dcf446722, type: 3}
+  destructiblePrefab: {fileID: 107626, guid: bcc0a35f1415b2745a222e14393d4318, type: 3}
   explosionEffectPrefab: {fileID: 0}

@@ -14,20 +14,23 @@ namespace HockeyEditor
         private HockeyPrefabManager prefabManager;
 
         [Header("Stage Settings")]
+        private float stageWidth = 30f;
+        private float stageLength = 40f;
         private Material stageMaterial;
         
         [Header("Destructible Object Settings")]
+        private GameObject destructiblePrefab;
         private int destructibleCount = 10;
         private float playerAreaClearance = 10f;
         private Material destructibleMaterial;
         private bool autoAddComponents = true;
+        private bool placingDestructible = false;
+        private Vector3 lastPlacedPosition;
         
         [Header("Puck Settings")]
         private GameObject puckPrefab;
         private Vector3 puckSpawnPosition = new Vector3(0, 0.5f, -10f);
         private bool createPuck = true;
-        private float stageWidth;
-        private float stageLength;
 
         [MenuItem("Hockey/Create Stage")]
         public static void ShowWindow()
@@ -38,6 +41,12 @@ namespace HockeyEditor
         private void OnEnable()
         {
             prefabManager = HockeyPrefabManager.Instance;
+            SceneView.duringSceneGui += OnSceneGUI;
+        }
+
+        private void OnDisable()
+        {
+            SceneView.duringSceneGui -= OnSceneGUI;
         }
 
         private void OnGUI()
@@ -49,35 +58,44 @@ namespace HockeyEditor
 
             GUILayout.Label("Stage Creator", EditorStyles.boldLabel);
             
-            // 基本ステージ設定
+            EditorGUILayout.Space();
             EditorGUILayout.LabelField("Basic Stage Settings", EditorStyles.boldLabel);
             stageWidth = EditorGUILayout.FloatField("Stage Width", stageWidth);
             stageLength = EditorGUILayout.FloatField("Stage Length", stageLength);
             stageMaterial = (Material)EditorGUILayout.ObjectField("Stage Material", stageMaterial, typeof(Material), false);
             
             EditorGUILayout.Space();
-            
-            // 破壊可能オブジェクト設定
             EditorGUILayout.LabelField("Destructible Object Settings", EditorStyles.boldLabel);
             
-            // 共通設定から参照
-            prefabManager.DestructiblePrefab = 
-                (GameObject)EditorGUILayout.ObjectField("Destructible Prefab", 
-                    prefabManager.DestructiblePrefab, typeof(GameObject), false);
-            
-            destructibleCount = EditorGUILayout.IntField("Destructible Count", destructibleCount);
+            destructiblePrefab = (GameObject)EditorGUILayout.ObjectField(
+                "Destructible Prefab", 
+                destructiblePrefab ?? prefabManager.DestructiblePrefab, 
+                typeof(GameObject), 
+                false
+            );
+
+            destructibleCount = EditorGUILayout.IntField("Auto Place Count", destructibleCount);
             playerAreaClearance = EditorGUILayout.FloatField("Player Area Clearance", playerAreaClearance);
             destructibleMaterial = (Material)EditorGUILayout.ObjectField("Destructible Material", destructibleMaterial, typeof(Material), false);
-            
-            prefabManager.ExplosionEffectPrefab = 
-                (GameObject)EditorGUILayout.ObjectField("Explosion Effect Prefab", 
-                    prefabManager.ExplosionEffectPrefab, typeof(GameObject), false);
-                    
             autoAddComponents = EditorGUILayout.Toggle("Auto Add Components", autoAddComponents);
-            
+
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button(placingDestructible ? "Stop Placing" : "Start Placing Destructibles"))
+            {
+                placingDestructible = !placingDestructible;
+                if (placingDestructible)
+                {
+                    EditorUtility.DisplayDialog("Placement Mode", 
+                        "Click in the Scene view to place destructible objects.\nPress Esc to exit placement mode.", "OK");
+                }
+            }
+            if (GUILayout.Button("Auto Place Destructibles"))
+            {
+                AutoPlaceDestructibles();
+            }
+            EditorGUILayout.EndHorizontal();
+
             EditorGUILayout.Space();
-            
-            // パック設定
             EditorGUILayout.LabelField("Puck Settings", EditorStyles.boldLabel);
             createPuck = EditorGUILayout.Toggle("Create Puck", createPuck);
             puckPrefab = (GameObject)EditorGUILayout.ObjectField("Puck Prefab", puckPrefab, typeof(GameObject), false);
@@ -102,6 +120,119 @@ namespace HockeyEditor
             if (GUILayout.Button("Setup Test Scene"))
             {
                 SetupTestScene();
+            }
+        }
+
+        private void OnSceneGUI(SceneView sceneView)
+        {
+            if (!placingDestructible) return;
+
+            // Escキーでプレースメントモードを終了
+            if (Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.Escape)
+            {
+                placingDestructible = false;
+                Repaint();
+                return;
+            }
+
+            // マウスクリックでDestructibleオブジェクトを配置
+            if (Event.current.type == EventType.MouseDown && Event.current.button == 0)
+            {
+                Ray ray = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
+                RaycastHit hit;
+                
+                if (Physics.Raycast(ray, out hit))
+                {
+                    Vector3 position = hit.point + Vector3.up * 0.5f; // 地面から少し上に配置
+                    PlaceDestructibleObject(position);
+                    Event.current.Use();
+                }
+            }
+
+            // シーンビューの再描画を要求
+            if (Event.current.type == EventType.Layout)
+            {
+                HandleUtility.Repaint();
+            }
+        }
+
+        private void PlaceDestructibleObject(Vector3 position)
+        {
+            GameObject destructible;
+            if (destructiblePrefab != null)
+            {
+                destructible = PrefabUtility.InstantiatePrefab(destructiblePrefab) as GameObject;
+            }
+            else
+            {
+                destructible = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                if (destructibleMaterial != null)
+                {
+                    destructible.GetComponent<MeshRenderer>().material = destructibleMaterial;
+                }
+            }
+
+            if (destructible != null)
+            {
+                destructible.transform.position = position;
+                destructible.transform.rotation = Quaternion.Euler(0, Random.Range(0, 360), 0);
+
+                if (autoAddComponents)
+                {
+                    DestructibleObject destructibleComponent = destructible.GetComponent<DestructibleObject>();
+                    if (destructibleComponent == null)
+                    {
+                        destructibleComponent = destructible.AddComponent<DestructibleObject>();
+                    }
+                }
+
+                Undo.RegisterCreatedObjectUndo(destructible, "Place Destructible Object");
+            }
+
+            lastPlacedPosition = position;
+        }
+
+        private void AutoPlaceDestructibles()
+        {
+            float minX = -stageWidth/2 + 3;
+            float maxX = stageWidth/2 - 3;
+            float minZ = -stageLength/2 + playerAreaClearance;
+            float maxZ = stageLength/2 - 3;
+            
+            List<Vector3> usedPositions = new List<Vector3>();
+            float minDestructibleDistance = 4f;
+            
+            for (int i = 0; i < destructibleCount; i++)
+            {
+                Vector3 position = Vector3.zero;
+                bool validPosition = false;
+                int attempts = 0;
+                
+                while (!validPosition && attempts < 50)
+                {
+                    position = new Vector3(
+                        Random.Range(minX, maxX),
+                        1f,
+                        Random.Range(minZ, maxZ)
+                    );
+                    
+                    validPosition = true;
+                    foreach (Vector3 usedPos in usedPositions)
+                    {
+                        if (Vector3.Distance(position, usedPos) < minDestructibleDistance)
+                        {
+                            validPosition = false;
+                            break;
+                        }
+                    }
+                    attempts++;
+                }
+                
+                if (validPosition)
+                {
+                    PlaceDestructibleObject(position);
+                    usedPositions.Add(position);
+                }
             }
         }
 

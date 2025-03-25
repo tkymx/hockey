@@ -5,7 +5,7 @@ public class Player : MonoBehaviour
     [Header("Movement Settings")]
     [SerializeField] private float moveSpeed = 10f;
     [SerializeField] private float mass = 2.0f;
-    [SerializeField] private float pushForce = 5.0f;
+    [SerializeField] private float pushForce = 20.0f; // 押し出す力を増加
     
     [Header("Strike Settings")]
     [SerializeField] private float strikeForce = 10f;
@@ -17,7 +17,6 @@ public class Player : MonoBehaviour
     private bool canStrike = true;
     private float strikeTimer = 0f;
     private Rigidbody rb;
-    private const float positionThreshold = 0.01f;
 
     private void Awake()
     {
@@ -30,28 +29,29 @@ public class Player : MonoBehaviour
         
         // 物理設定
         rb.mass = mass;
-        rb.linearDamping = 1f;
+        rb.linearDamping = 0.5f; // 空気抵抗を少し追加
         rb.angularDamping = 0.5f;
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezePositionY;
         rb.useGravity = false;
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
-        rb.isKinematic = false; // 物理挙動を有効化
+        rb.isKinematic = false;
     }
 
     private void Update()
     {
-        // プレイヤーの移動
-        if (Vector3.Distance(transform.position, targetPosition) > positionThreshold)
+        // プレイヤーの位置を即座に更新
+        Vector3 currentPos = transform.position;
+        transform.position = Vector3.Lerp(currentPos, new Vector3(targetPosition.x, currentPos.y, targetPosition.z), 0.5f);
+
+        // 移動方向を向く
+        Vector3 direction = (targetPosition - transform.position);
+        if (direction.magnitude > 0.01f)
         {
-            Vector3 direction = (targetPosition - transform.position).normalized;
-            Vector3 force = direction * moveSpeed;
-            rb.AddForce(force, ForceMode.Force);
-            
-            // 移動方向に回転
-            if (direction != Vector3.zero)
-            {
-                transform.rotation = Quaternion.LookRotation(direction);
-            }
+            transform.rotation = Quaternion.Slerp(
+                transform.rotation,
+                Quaternion.LookRotation(direction.normalized),
+                0.3f
+            );
         }
 
         // パックを打つクールダウン処理
@@ -65,7 +65,7 @@ public class Player : MonoBehaviour
         }
 
         // パックを打つ入力処理
-        if (canStrike && Input.GetMouseButtonDown(1)) // 右クリックでパックを打つ
+        if (canStrike && Input.GetMouseButtonDown(1))
         {
             Strike();
         }
@@ -73,15 +73,19 @@ public class Player : MonoBehaviour
 
     public void SetPosition(Vector3 position)
     {
-        position.y = transform.position.y; // Y座標を維持
+        position.y = transform.position.y;
         transform.position = position;
         targetPosition = position;
-        rb.linearVelocity = Vector3.zero; // 速度をリセット
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
     }
 
     public void MoveTo(Vector3 position)
     {
-        position.y = transform.position.y; // Y座標を維持
+        position.y = transform.position.y;
         targetPosition = position;
     }
 
@@ -135,22 +139,38 @@ public class Player : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        // パックとの衝突処理
         Puck puck = collision.gameObject.GetComponent<Puck>();
         if (puck != null)
         {
-            // 衝突点での相対速度を計算
-            Vector3 relativeVelocity = collision.relativeVelocity;
+            // 衝突点を取得
+            ContactPoint contact = collision.GetContact(0);
+            Vector3 collisionNormal = contact.normal;
             
-            // プレイヤーの移動方向を考慮した追加の力
-            Vector3 playerDirection = (targetPosition - transform.position).normalized;
-            Vector3 additionalForce = playerDirection * pushForce;
+            // プレイヤーとパックの速度を取得
+            Vector3 playerVelocity = rb.linearVelocity;
+            Rigidbody puckRb = puck.GetComponent<Rigidbody>();
+            Vector3 puckVelocity = puckRb.linearVelocity;
             
-            // パックに力を適用（衝突の力と追加の力を合わせる）
-            Vector3 totalForce = (relativeVelocity + additionalForce).normalized * 
-                               (relativeVelocity.magnitude + pushForce);
+            // 衝突の強さを計算
+            float restitution = 0.8f;
+            Vector3 relativeVelocity = playerVelocity - puckVelocity;
+            float normalVelocity = Vector3.Dot(relativeVelocity, collisionNormal);
             
-            puck.ApplyForce(totalForce);
+            if (normalVelocity < 0)
+            {
+                // 運動量による衝突力を計算
+                float j = -(1 + restitution) * normalVelocity;
+                j /= (1 / mass) + (1 / puckRb.mass);
+                Vector3 impulse = j * collisionNormal;
+                
+                // プレイヤーの移動方向の力を追加
+                Vector3 playerDirection = (targetPosition - transform.position).normalized;
+                Vector3 additionalForce = playerDirection * pushForce;
+                
+                // 衝突力を増幅して適用
+                Vector3 totalForce = (impulse + additionalForce) * 25f; // 全体の力を2.5倍に増幅
+                puck.ApplyForce(totalForce);
+            }
         }
     }
 

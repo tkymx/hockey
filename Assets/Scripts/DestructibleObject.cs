@@ -12,10 +12,48 @@ public class DestructibleObject : MonoBehaviour
     
     // オブジェクト破壊時のイベント
     public event Action<DestructibleObject, int> OnObjectDestroyed;
+
+    private void Awake()
+    {
+        // コライダーがない場合は自動で追加
+        Collider collider = GetComponent<Collider>();
+        if (collider == null)
+        {
+            // レンダラーのバウンズを取得
+            Renderer renderer = GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                // バウンディングボックスに基づいてBoxColliderを追加
+                BoxCollider boxCollider = gameObject.AddComponent<BoxCollider>();
+                boxCollider.center = renderer.bounds.center - transform.position;
+                boxCollider.size = renderer.bounds.size;
+            }
+            else
+            {
+                // レンダラーがない場合はデフォルトサイズのBoxColliderを追加
+                gameObject.AddComponent<BoxCollider>();
+                Debug.LogWarning($"レンダラーが見つからないため、デフォルトサイズのコライダーを追加しました: {gameObject.name}");
+            }
+        }
+    }
     
     public void Initialize()
     {
         isDestroyed = false;
+        
+        // コライダーを有効化
+        Collider collider = GetComponent<Collider>();
+        if (collider != null)
+        {
+            collider.enabled = true;
+        }
+        
+        // レンダラーを有効化
+        Renderer renderer = GetComponent<Renderer>();
+        if (renderer != null)
+        {
+            renderer.enabled = true;
+        }
     }
     
     public void Hit(float force)
@@ -44,7 +82,11 @@ public class DestructibleObject : MonoBehaviour
         OnObjectDestroyed?.Invoke(this, pointValue);
         
         // オブジェクトを非表示にする
-        GetComponent<Renderer>().enabled = false;
+        var renderer = GetComponentInChildren<Renderer>();
+        if (renderer != null)
+        {
+            renderer.enabled = false;
+        }
         
         // コライダーを無効化
         Collider collider = GetComponent<Collider>();

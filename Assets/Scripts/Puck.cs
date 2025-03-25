@@ -11,6 +11,7 @@ public class Puck : MonoBehaviour
     private bool isMoving = false;
     private Rigidbody rb;
     private SphereCollider sphereCollider;
+    private PuckView puckView;
     
     public float StrikeForceMultiplier { get; set; } = 10.0f;
 
@@ -27,6 +28,8 @@ public class Puck : MonoBehaviour
         {
             sphereCollider = gameObject.AddComponent<SphereCollider>();
         }
+
+        puckView = GetComponent<PuckView>();
         
         // パックの物理設定
         rb.mass = mass;
@@ -102,7 +105,7 @@ public class Puck : MonoBehaviour
         return isMoving;
     }
     
-    public void Reset(Vector3 position)
+    public void ResetPosition(Vector3 position)
     {
         transform.position = position;
         rb.linearVelocity = Vector3.zero;
@@ -111,7 +114,11 @@ public class Puck : MonoBehaviour
     
     private void OnCollisionEnter(Collision collision)
     {
-        // ここでは衝突イベントを検知するだけで、
-        // 実際の処理は他のコンポーネント（DestructibleObjectなど）で行う
+        if (puckView != null)
+        {
+            // 衝突点の位置でヒットエフェクトを再生
+            ContactPoint contact = collision.GetContact(0);
+            puckView.PlayHitEffect(contact.point);
+        }
     }
 }
