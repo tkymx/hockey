@@ -1,0 +1,261 @@
+@startuml HockeyGameArchitecture
+
+package "Core" {
+  class GameManager {
+    - _stageManager: StageManager
+    - _playerManager: PlayerManager
+    - _uiManager: UIManager
+    - _scoreManager: ScoreManager
+    - _timeManager: TimeManager
+    - _audioManager: AudioManager
+    + Initialize()
+    + StartGame()
+    + PauseGame()
+    + ResumeGame()
+    + EndGame()
+    + Update()
+  }
+
+  class StageManager {
+    - _currentStage: Stage
+    - _objectPool: ObjectPool
+    + Initialize()
+    + LoadStage(stageId: int)
+    + SpawnObjects()
+    + CleanupStage()
+    + GenerateStage()  ' ステージを生成する
+    + DisplayStage()   ' ステージを表示する
+  }
+
+  class PlayerManager {
+    - _player: Player
+    + Initialize()
+    + CreatePlayer()
+    + SetInitialPlayerPosition(position: Vector3) ' プレイヤーの初期位置を設定する
+    + UpdatePlayerState()
+    + HandlePlayerGrowth()
+  }
+
+  class ScoreManager {
+    - _currentScore: int
+    - _highScore: int
+    + AddPoints(points: int)
+    + GetCurrentScore(): int
+    + ResetScore()
+    + CheckGrowthThreshold(): bool
+  }
+
+  class TimeManager {
+    - _gameTime: float
+    - _isRunning: bool
+    + StartTimer()
+    + StopTimer()
+    + GetRemainingTime(): float
+    + IsTimeUp(): bool
+  }
+
+  class UIManager {
+    - _gameHUDView: GameHUDView
+    - _mainMenuView: MainMenuView
+    - _pauseMenuView: PauseMenuView
+    - _gameOverMenuView: GameOverMenuView
+    + Initialize()
+    + ShowMainMenu()
+    + ShowGameHUD()
+    + ShowPauseMenu()
+    + ShowGameOverMenu()
+    + UpdateScoreDisplay(score: int)
+    + UpdateTimeDisplay(time: float)
+    + UpdateGrowthDisplay(growthLevel: int)
+  }
+  
+  class AudioManager {
+    - _sfxPool: Dictionary<string, AudioClip>
+    - _bgmPool: Dictionary<string, AudioClip>
+    + PlaySFX(sfxName: string)
+    + PlayBGM(bgmName: string)
+    + StopBGM()
+    + SetVolume(volume: float)
+  }
+}
+
+package "Model" {
+  class Player {
+    - _size: float
+    - _speed: float
+    - _growthLevel: int
+    - _position: Vector3
+    + Initialize()
+    + Move(direction: Vector2)
+    + Grow()
+    + GetSize(): float
+    + GetPosition(): Vector3
+    + SetPosition(position: Vector3)
+  }
+
+  class Stage {
+    - _stageId: int
+    - _objectList: List<GameObject>
+    - _backgroundPrefab: GameObject
+    + Initialize()
+    + GetObjectsInStage(): List<GameObject>
+  }
+
+  class GameObject {
+    - _position: Vector3
+    - _size: float
+    - _pointValue: int
+    - _destroyed: bool
+    + Initialize()
+    + Hit(force: float)
+    + Destroy()
+    + IsDestroyed(): bool
+    + GetPointValue(): int
+  }
+
+  class ObjectPool {
+    - _pooledObjects: Dictionary<string, List<GameObject>>
+    + GetObject(objectType: string): GameObject
+    + ReturnObject(objectType: string, obj: GameObject)
+    + ExpandPool(objectType: string, count: int)
+  }
+}
+
+package "View" {
+  class PlayerView {
+    - _playerModel: Player
+    - _sprite: SpriteRenderer
+    - _animator: Animator
+    - _playerObject: GameObject  ' 3D プレイヤーオブジェクト
+    + Initialize(player: Player)
+    + UpdateVisuals()
+    + PlayAnimation(animName: string)
+    + MovePlayer(position: Vector3) ' プレイヤーを移動させる
+  }
+
+  class GameObjectView {
+    - _gameObjectModel: GameObject
+    - _sprite: SpriteRenderer
+    - _animator: Animator
+    - _particleSystem: ParticleSystem
+    + Initialize(gameObject: GameObject)
+    + UpdateVisuals()
+    + PlayDestroyAnimation()
+    + PlayParticleEffect()
+  }
+
+  class GameHUDView {
+    - _scoreText: Text
+    - _timeText: Text
+    - _growthIndicator: Image
+    + UpdateScore(score: int)
+    + UpdateTime(time: float)
+    + UpdateGrowthLevel(level: int)
+  }
+
+  class MainMenuView {
+    + Show()
+    + Hide()
+    + OnStartButtonClicked()
+    + OnOptionsButtonClicked()
+    + OnExitButtonClicked()
+  }
+
+  class PauseMenuView {
+    + Show()
+    + Hide()
+    + OnResumeButtonClicked()
+    + OnRestartButtonClicked()
+    + OnMainMenuButtonClicked()
+  }
+
+  class GameOverMenuView {
+    - _finalScoreText: Text
+    - _highScoreText: Text
+    + Show(score: int, highScore: int)
+    + Hide()
+    + OnRestartButtonClicked()
+    + OnMainMenuButtonClicked()
+  }
+
+  class CameraController {
+    - _target: Transform
+    - _defaultZoom: float
+    - _currentZoom: float
+    + Follow(target: Transform)
+    + Zoom(zoomLevel: float)
+    + ResetZoom()
+  }
+
+  class StageView {
+    - _stageModel: Stage
+    - _stageObject: GameObject  ' 3D ステージオブジェクト
+    + Initialize(stage: Stage)
+    + DisplayStage()  ' ステージを表示する
+  }
+}
+
+package "Controller" {
+  class InputController {
+    - _inputActions: InputActions
+    + Initialize()
+    + GetMovementInput(): Vector2
+    + IsActionButtonPressed(): bool
+    + IsPauseButtonPressed(): bool
+    + Enable()
+    + Disable()
+  }
+
+  class PlayerController {
+    - _player: Player
+    - _playerView: PlayerView
+    - _inputController: InputController
+    + Initialize(player: Player, playerView: PlayerView)
+    + ProcessInput()
+    + UpdatePlayerAndView()
+  }
+
+  class CollisionController {
+    + CheckCollisions(player: Player, gameObjects: List<GameObject>): GameObject
+    + HandleCollision(player: Player, gameObject: GameObject): int
+  }
+
+  class MouseInputController {
+    + GetMousePosition(): Vector3  ' マウスの位置を取得する
+  }
+}
+
+' Core relationships
+GameManager --> StageManager
+GameManager --> PlayerManager
+GameManager --> UIManager
+GameManager --> ScoreManager
+GameManager --> TimeManager
+GameManager --> AudioManager
+
+' Model relationships
+PlayerManager --> Player
+StageManager --> Stage
+StageManager --> ObjectPool
+Stage --> GameObject
+
+' View relationships
+PlayerManager --> PlayerView
+UIManager --> GameHUDView
+UIManager --> MainMenuView
+UIManager --> PauseMenuView
+UIManager --> GameOverMenuView
+StageManager --> StageView
+
+' Controller relationships
+PlayerManager --> PlayerController
+PlayerController --> InputController
+PlayerController --> CollisionController
+PlayerController --> MouseInputController
+
+' Model-View relationships
+PlayerView --> Player
+GameObjectView --> GameObject
+StageView --> Stage
+
+@enduml
