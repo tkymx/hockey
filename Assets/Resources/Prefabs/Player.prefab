@@ -207,4 +207,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d9fbbc749f46244e9bfa0261ce366b7a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 10
+  moveSpeed: 50
+  mass: 2
+  pushForce: 5
+  strikeForce: 10
+  strikeRadius: 2
+  strikeDelay: 0.5
+  puckLayer:
+    serializedVersion: 2
+    m_Bits: 0

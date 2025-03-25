@@ -40,4 +40,17 @@ public class PlayerManager : MonoBehaviour
     {
         return currentPlayer;
     }
+    
+    // プレイヤーを初期位置にリセット
+    public void ResetPlayer()
+    {
+        if (currentPlayer != null)
+        {
+            currentPlayer.SetPosition(initialPosition);
+        }
+        else
+        {
+            CreatePlayer();
+        }
+    }
 }
