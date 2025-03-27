@@ -70,8 +70,8 @@ public class GameManager : MonoBehaviour
         // 破壊可能オブジェクトを収集
         CollectDestructibleObjects();
         
-        // パックの初期化
-        InitializePuck();
+        // ステージとパックのリセット
+        ResetStage();
         
         isGameActive = true;
         gameOverMenuView.Hide();
@@ -111,7 +111,7 @@ public class GameManager : MonoBehaviour
         destructibleObjects.Clear();
         
         // シーン内の全ての破壊可能オブジェクトを取得
-        DestructibleObject[] objects = FindObjectsOfType<DestructibleObject>();
+        DestructibleObject[] objects = FindObjectsByType<DestructibleObject>(FindObjectsSortMode.None);
         foreach (var obj in objects)
         {
             if (obj != null)
@@ -181,12 +181,13 @@ public class GameManager : MonoBehaviour
     public void ResetStage()
     {
         // パックをリセット
-        if (puckController != null)
+        if (puckController != null && puckSpawnPoint != null)
         {
-            Vector3 spawnPosition = (puckSpawnPoint != null) ? 
-                puckSpawnPoint.position : 
-                new Vector3(0, 0.5f, 0);
-            puckController.ResetPuck(spawnPosition);
+            puckController.ResetPuck(puckSpawnPoint.position);
+        }
+        else if (puckController != null)
+        {
+            puckController.ResetPuck(new Vector3(0, 0.5f, 0));
         }
         
         // プレイヤーを初期位置にリセット

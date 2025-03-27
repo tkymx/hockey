@@ -30,7 +30,21 @@ public class PuckController : MonoBehaviour
     {
         if (puck == null) return;
         
-        puck.ResetPosition(position); // Resetをnew ResetPositionに更新
-        puckView.PlayTrailEffect(false);
+        // 物理挙動をリセット
+        Rigidbody rb = puck.GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.velocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
+
+        // 位置をリセット
+        puck.transform.position = position;
+        
+        // エフェクトをリセット
+        if (puckView != null)
+        {
+            puckView.PlayTrailEffect(false);
+        }
     }
 }
