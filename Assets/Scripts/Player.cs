@@ -3,20 +3,18 @@ using UnityEngine;
 public class Player : MonoBehaviour
 {
     [Header("Movement Settings")]
-    [SerializeField] private float moveSpeed = 10f;
     [SerializeField] private float mass = 2.0f;
     [SerializeField] private float collisionForceMultiplier = 2.5f;
-    [SerializeField] private float positionSmoothTime = 0.05f; // 位置の補間時間
 
-    private Vector3 targetPosition;
     private Vector3 previousPosition;
     private Vector3 currentVelocity;
-    private Vector3 smoothVelocity;
     private Rigidbody rb;
+    private MeshRenderer meshRenderer;
+    private Collider playerCollider;
+    private Camera mainCamera;
 
     private void Awake()
     {
-        targetPosition = transform.position;
         previousPosition = transform.position;
         rb = GetComponent<Rigidbody>();
         if (rb == null)
@@ -24,58 +22,63 @@ public class Player : MonoBehaviour
             rb = gameObject.AddComponent<Rigidbody>();
         }
         
+        meshRenderer = GetComponentInChildren<MeshRenderer>();
+        playerCollider = GetComponent<Collider>();
+        mainCamera = Camera.main;
+
+        // 初期状態では非表示かつ当たり判定無効
+        SetActiveState(false);
+        
         // 物理設定
         rb.mass = mass;
         rb.useGravity = false;
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezePositionY;
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
-        rb.interpolation = RigidbodyInterpolation.Interpolate;
+        rb.interpolation = RigidbodyInterpolation.None; // 補間を無効化
     }
 
     private void Update()
     {
-        // マウス位置への移動
-        Vector3 newPosition = Vector3.SmoothDamp(
-            transform.position,
-            targetPosition,
-            ref smoothVelocity,
-            positionSmoothTime
-        );
-        
-        // 現在のフレームでの速度を計算
-        currentVelocity = (newPosition - previousPosition) / Time.deltaTime;
-        
-        // 位置を更新
-        transform.position = newPosition;
-        
-        // 移動方向を向く
-        if (currentVelocity.magnitude > 0.1f)
-        {
-            transform.rotation = Quaternion.Slerp(
-                transform.rotation,
-                Quaternion.LookRotation(currentVelocity.normalized),
-                0.3f
-            );
-        }
+        bool isPressed = Input.GetMouseButton(0);
+        SetActiveState(isPressed);
+    }
 
-        // 前フレームの位置を更新
-        previousPosition = transform.position;
+    private void SetActiveState(bool active)
+    {
+        if (meshRenderer != null)
+        {
+            meshRenderer.enabled = active;
+        }
+        if (playerCollider != null)
+        {
+            playerCollider.enabled = active;
+        }
+        if (rb != null)
+        {
+            rb.isKinematic = !active; // アクティブでない時は物理演算を無効化
+        }
     }
 
     public void SetPosition(Vector3 position)
     {
+        Vector3 oldPosition = transform.position;
         position.y = transform.position.y;
         transform.position = position;
+        
+        // 位置が変更された場合の速度を計算
+        currentVelocity = (position - oldPosition) / Time.deltaTime;
         previousPosition = position;
-        targetPosition = position;
-        currentVelocity = Vector3.zero;
-        smoothVelocity = Vector3.zero;
     }
 
     public void MoveTo(Vector3 position)
     {
+        Vector3 oldPosition = transform.position;
         position.y = transform.position.y;
-        targetPosition = position;
+        transform.position = position;
+        
+        // 移動による速度を計算
+        currentVelocity = (position - oldPosition) / Time.deltaTime;
+        previousPosition = position;
     }
 
     private void OnCollisionEnter(Collision collision)
