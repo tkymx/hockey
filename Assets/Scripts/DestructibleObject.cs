@@ -5,12 +5,11 @@ public class DestructibleObject : MonoBehaviour
 {
     [Header("Object Properties")]
     [SerializeField] private int pointValue = 100;
-    [SerializeField] private float hitThreshold = 5.0f;
+    [SerializeField] private int requiredLevel = 1; // このオブジェクトを破壊するために必要なプレイヤーレベル
     [SerializeField] private GameObject explosionPrefab;
     
     private bool isDestroyed = false;
     
-    // オブジェクト破壊時のイベント
     public event Action<DestructibleObject, int> OnObjectDestroyed;
 
     private void Awake()
@@ -56,13 +55,21 @@ public class DestructibleObject : MonoBehaviour
         }
     }
     
-    public void Hit(float force)
+    public void Hit(float force, Player player)
     {
         if (isDestroyed) return;
-        
-        if (force >= hitThreshold)
+
+        // プレイヤーのレベルが要求レベル以上の場合のみ破壊可能
+        if (player != null && player.GetBreakableObjectLevel() >= requiredLevel)
         {
             Destroy();
+            // 経験値として破壊難易度 * 基本ポイントを付与
+            bool didLevelUp = player.GainExperience(pointValue * requiredLevel);
+            if (didLevelUp)
+            {
+                // レベルアップ時の処理（エフェクトなど）
+                Debug.Log($"Player leveled up to {player.Level}!");
+            }
         }
     }
     
@@ -113,9 +120,15 @@ public class DestructibleObject : MonoBehaviour
     {
         if (collision.gameObject.GetComponent<Puck>() != null)
         {
-            // パックの速度から衝突の力を計算
+            // パックの所有者（最後に触ったプレイヤー）を取得
+            Puck puck = collision.gameObject.GetComponent<Puck>();
+            Player player = puck.GetLastHitPlayer();
+            
             float impactForce = collision.relativeVelocity.magnitude;
-            Hit(impactForce);
+            Hit(impactForce, player);
         }
     }
+
+    // 要求レベル取得用のプロパティ
+    public int RequiredLevel => requiredLevel;
 }

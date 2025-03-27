@@ -1,10 +1,20 @@
 using UnityEngine;
+using System;
 
 public class Player : MonoBehaviour
 {
     [Header("Movement Settings")]
     [SerializeField] private float mass = 2.0f;
     [SerializeField] private float collisionForceMultiplier = 2.5f;
+
+    [Header("Player Stats")]
+    [SerializeField] private int level = 1;
+    [SerializeField] private int experiencePoints = 0;
+    [SerializeField] private int[] experienceThresholds = { 0, 100, 300, 600, 1000 }; // レベルアップに必要な経験値
+
+    public int Level => level;
+
+    public event Action<int> OnLevelChanged;
 
     private Vector3 previousPosition;
     private Vector3 currentVelocity;
@@ -97,5 +107,27 @@ public class Player : MonoBehaviour
             // パックに力を適用
             puck.ApplyForce(collisionForce);
         }
+    }
+
+    // レベルに応じて破壊できるオブジェクトの最大レベルを返す
+    public int GetBreakableObjectLevel()
+    {
+        return level;
+    }
+
+    // 経験値を獲得してレベルアップをチェック
+    public bool GainExperience(int exp)
+    {
+        bool didLevelUp = false;
+        experiencePoints += exp;
+
+        while (level < experienceThresholds.Length && experiencePoints >= experienceThresholds[level])
+        {
+            level++;
+            didLevelUp = true;
+            OnLevelChanged?.Invoke(level);
+        }
+
+        return didLevelUp;
     }
 }

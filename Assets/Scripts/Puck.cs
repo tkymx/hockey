@@ -12,6 +12,7 @@ public class Puck : MonoBehaviour
     private Rigidbody rb;
     private SphereCollider sphereCollider;
     private PuckView puckView;
+    private Player lastHitPlayer;
 
     private void Awake()
     {
@@ -65,9 +66,13 @@ public class Puck : MonoBehaviour
         }
     }
     
-    public void ApplyForce(Vector3 force)
+    public void ApplyForce(Vector3 force, Player player = null)
     {
-        // 力を適用
+        if (player != null)
+        {
+            lastHitPlayer = player;
+        }
+        
         rb.AddForce(new Vector3(force.x, 0, force.z), ForceMode.Impulse);
         
         // 最大速度を制限
@@ -107,8 +112,19 @@ public class Puck : MonoBehaviour
         isMoving = false;
     }
     
+    public Player GetLastHitPlayer()
+    {
+        return lastHitPlayer;
+    }
+    
     private void OnCollisionEnter(Collision collision)
     {
+        Player player = collision.gameObject.GetComponent<Player>();
+        if (player != null)
+        {
+            lastHitPlayer = player;
+        }
+
         if (puckView != null)
         {
             // 衝突点の位置でヒットエフェクトを再生

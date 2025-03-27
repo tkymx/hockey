@@ -207,7 +207,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d9fbbc749f46244e9bfa0261ce366b7a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 10
   mass: 2
   collisionForceMultiplier: 2.5
-  positionSmoothTime: 0.05
+  level: 1
+  experiencePoints: 0
+  experienceThresholds: 00000000f4010000e8030000dc050000d0070000

@@ -36,13 +36,21 @@ public class GameManager : MonoBehaviour
             Debug.LogError("Required components are not assigned to GameManager!");
             return;
         }
+        
+        StartGame();
 
         // イベントの登録
         timeManager.OnTimeChanged.AddListener(HandleTimeChanged);
         timeManager.OnTimeUp.AddListener(HandleGameOver);
         gameOverMenuView.OnRestartRequested.AddListener(RestartGame);
-        
-        StartGame();
+
+        // プレイヤーのレベル変更イベントを購読
+        Player player = playerManager.GetPlayer();
+        if (player != null)
+        {
+            gameHUDView.UpdateLevel(player.Level);
+            player.OnLevelChanged += HandlePlayerLevelChanged;
+        }
     }
 
     private void StartGame()
@@ -202,6 +210,38 @@ public class GameManager : MonoBehaviour
         else
         {
             timeManager.StopTimer();
+        }
+    }
+
+    private void HandlePlayerLevelChanged(int newLevel)
+    {
+        if (gameHUDView != null)
+        {
+            gameHUDView.UpdateLevel(newLevel);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        // イベントの購読解除
+        if (playerManager != null)
+        {
+            Player player = playerManager.GetPlayer();
+            if (player != null)
+            {
+                player.OnLevelChanged -= HandlePlayerLevelChanged;
+            }
+        }
+
+        if (timeManager != null)
+        {
+            timeManager.OnTimeChanged.RemoveListener(HandleTimeChanged);
+            timeManager.OnTimeUp.RemoveListener(HandleGameOver);
+        }
+
+        if (gameOverMenuView != null)
+        {
+            gameOverMenuView.OnRestartRequested.RemoveListener(RestartGame);
         }
     }
 }

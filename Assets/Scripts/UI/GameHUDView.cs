@@ -5,14 +5,16 @@ public class GameHUDView : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI scoreText;
     [SerializeField] private TextMeshProUGUI timeText;
+    [SerializeField] private TextMeshProUGUI levelText;
 
     private void Start()
     {
         UpdateScore(0);
         UpdateTime(0);
+        UpdateLevel(1);
     }
 
-    public void UpdateScore(int score)
+    internal void UpdateScore(int score)
     {
         if (scoreText != null)
         {
@@ -20,13 +22,21 @@ public class GameHUDView : MonoBehaviour
         }
     }
 
-    public void UpdateTime(float time)
+    internal void UpdateTime(float time)
     {
         if (timeText != null)
         {
             int minutes = Mathf.FloorToInt(time / 60);
             int seconds = Mathf.FloorToInt(time % 60);
             timeText.text = $"残り時間: {minutes:00}:{seconds:00}";
+        }
+    }
+
+    internal void UpdateLevel(int level)
+    {
+        if (levelText != null)
+        {
+            levelText.text = $"レベル: {level}";
         }
     }
 }

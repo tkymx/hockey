@@ -26,6 +26,9 @@ namespace HockeyEditor
         private bool autoAddComponents = true;
         private bool placingDestructible = false;
         private Vector3 lastPlacedPosition;
+        [SerializeField] private List<GameObject> level1Prefabs; // 段階1のプレファブリスト
+        [SerializeField] private List<GameObject> level2Prefabs; // 段階2のプレファブリスト
+        [SerializeField] private List<GameObject> level3Prefabs; // 段階3のプレファブリスト
 
         [MenuItem("Hockey/Create Stage")]
         public static void ShowWindow()
@@ -37,11 +40,13 @@ namespace HockeyEditor
         {
             prefabManager = HockeyPrefabManager.Instance;
             SceneView.duringSceneGui += OnSceneGUI;
+            LoadPrefabSettings();
         }
 
         private void OnDisable()
         {
             SceneView.duringSceneGui -= OnSceneGUI;
+            SavePrefabSettings();
         }
 
         private void OnGUI()
@@ -89,6 +94,32 @@ namespace HockeyEditor
                 AutoPlaceDestructibles();
             }
             EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.Space();
+            
+            EditorGUILayout.LabelField("Level Prefabs", EditorStyles.boldLabel);
+        
+            // レベル1のプレハブリスト
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.LabelField("Level 1 Prefabs (Easiest)", EditorStyles.boldLabel);
+            DrawPrefabList(level1Prefabs);
+            EditorGUILayout.EndVertical();
+            
+            EditorGUILayout.Space();
+            
+            // レベル2のプレハブリスト
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.LabelField("Level 2 Prefabs (Medium)", EditorStyles.boldLabel);
+            DrawPrefabList(level2Prefabs);
+            EditorGUILayout.EndVertical();
+            
+            EditorGUILayout.Space();
+            
+            // レベル3のプレハブリスト
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.LabelField("Level 3 Prefabs (Hardest)", EditorStyles.boldLabel);
+            DrawPrefabList(level3Prefabs);
+            EditorGUILayout.EndVertical();
 
             EditorGUILayout.Space();
             
@@ -278,6 +309,11 @@ namespace HockeyEditor
             float minZ = -stageLength/2 + playerAreaClearance;
             float maxZ = stageLength/2 - 3;
             
+            // ステージの奥行きを3つの領域に分割
+            float zoneDepth = (maxZ - minZ) / 3f;
+            float zone1MaxZ = minZ + zoneDepth;
+            float zone2MaxZ = zone1MaxZ + zoneDepth;
+            
             List<Vector3> usedPositions = new List<Vector3>();
             float minDestructibleDistance = 4f;
             
@@ -290,12 +326,31 @@ namespace HockeyEditor
                 bool validPosition = false;
                 int attempts = 0;
                 
+                // オブジェクトの段階を決定
+                int level;
+                float z;
+                
                 while (!validPosition && attempts < 50)
                 {
+                    // Z位置に基づいて段階を決定
+                    z = Random.Range(minZ, maxZ);
+                    if (z <= zone1MaxZ)
+                    {
+                        level = 1;
+                    }
+                    else if (z <= zone2MaxZ)
+                    {
+                        level = 2;
+                    }
+                    else
+                    {
+                        level = 3;
+                    }
+                    
                     position = new Vector3(
                         Random.Range(minX, maxX),
                         1f,
-                        Random.Range(minZ, maxZ)
+                        z
                     );
                     
                     validPosition = true;
@@ -312,13 +367,14 @@ namespace HockeyEditor
                 
                 if (validPosition)
                 {
-                    GameObject destructible;
+                    GameObject destructible = null;
+                    List<GameObject> prefabList = GetPrefabListForLevel(position.z, zone1MaxZ, zone2MaxZ, maxZ);
                     
-                    if (prefabManager.DestructiblePrefab != null)
+                    if (prefabList != null && prefabList.Count > 0)
                     {
-                        destructible = PrefabUtility.InstantiatePrefab(
-                            prefabManager.DestructiblePrefab, 
-                            destructiblesContainer.transform) as GameObject;
+                        // ランダムにプレファブを選択
+                        GameObject selectedPrefab = prefabList[Random.Range(0, prefabList.Count)];
+                        destructible = PrefabUtility.InstantiatePrefab(selectedPrefab, destructiblesContainer.transform) as GameObject;
                     }
                     else
                     {
@@ -326,31 +382,161 @@ namespace HockeyEditor
                         destructible.transform.SetParent(destructiblesContainer.transform);
                     }
                     
-                    destructible.name = "Destructible_" + i;
-                    destructible.transform.localPosition = position;
-                    destructible.transform.localRotation = Quaternion.Euler(0, Random.Range(0, 360), 0);
-                    
-                    if (autoAddComponents)
+                    if (destructible != null)
                     {
-                        DestructibleObject destructibleComp = destructible.AddComponent<DestructibleObject>();
-                        DestructibleObjectView destructibleView = destructible.AddComponent<DestructibleObjectView>();
+                        destructible.name = $"Destructible_Level{GetLevelForPosition(position.z, zone1MaxZ, zone2MaxZ, maxZ)}_{i}";
+                        destructible.transform.localPosition = position;
+                        destructible.transform.localRotation = Quaternion.Euler(0, Random.Range(0, 360), 0);
                         
-                        if (prefabManager.ExplosionEffectPrefab != null)
+                        if (autoAddComponents)
                         {
-                            var field = typeof(DestructibleObject).GetField("explosionPrefab", 
-                                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-                            if (field != null)
+                            DestructibleObject destructibleComp = destructible.GetComponent<DestructibleObject>();
+                            if (destructibleComp == null)
                             {
-                                field.SetValue(destructibleComp, prefabManager.ExplosionEffectPrefab);
+                                destructibleComp = destructible.AddComponent<DestructibleObject>();
                             }
+                            
+                            // レベルに応じた設定
+                            var levelField = typeof(DestructibleObject).GetField("requiredLevel", 
+                                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                            if (levelField != null)
+                            {
+                                int objLevel = GetLevelForPosition(position.z, zone1MaxZ, zone2MaxZ, maxZ);
+                                levelField.SetValue(destructibleComp, objLevel);
+                                
+                                // レベルに応じて耐久力を設定
+                                var hpField = typeof(DestructibleObject).GetField("maxHitPoints",
+                                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                                if (hpField != null)
+                                {
+                                    float hp = objLevel * 100f; // レベルに応じて耐久力を増加
+                                    hpField.SetValue(destructibleComp, hp);
+                                }
+                            }
+                            
+                            DestructibleObjectView destructibleView = destructible.GetComponent<DestructibleObjectView>();
+                            if (destructibleView == null)
+                            {
+                                destructibleView = destructible.AddComponent<DestructibleObjectView>();
+                            }
+                            destructibleView.Initialize(destructibleComp);
                         }
                         
-                        destructibleView.Initialize(destructibleComp);
+                        usedPositions.Add(position);
                     }
-                    
-                    usedPositions.Add(position);
                 }
             }
         }
+        
+        private List<GameObject> GetPrefabListForLevel(float z, float zone1MaxZ, float zone2MaxZ, float maxZ)
+        {
+            int level = GetLevelForPosition(z, zone1MaxZ, zone2MaxZ, maxZ);
+            switch (level)
+            {
+                case 1:
+                    return level1Prefabs;
+                case 2:
+                    return level2Prefabs;
+                case 3:
+                    return level3Prefabs;
+                default:
+                    return level1Prefabs;
+            }
+        }
+
+        private int GetLevelForPosition(float z, float zone1MaxZ, float zone2MaxZ, float maxZ)
+        {
+            if (z <= zone1MaxZ)
+            {
+                return 1;
+            }
+            else if (z <= zone2MaxZ)
+            {
+                return 2;
+            }
+            else
+            {
+                return 3;
+            }
+        }
+
+        private void DrawPrefabList(List<GameObject> prefabList)
+        {
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Add Prefab", GUILayout.Width(100)))
+            {
+                prefabList.Add(null);
+            }
+            if (GUILayout.Button("Clear All", GUILayout.Width(100)))
+            {
+                if (EditorUtility.DisplayDialog("Clear Prefabs", 
+                    "Are you sure you want to clear all prefabs from this list?", 
+                    "Yes", "No"))
+                {
+                    prefabList.Clear();
+                }
+            }
+            EditorGUILayout.EndHorizontal();
+            
+            EditorGUI.indentLevel++;
+            
+            for (int i = 0; i < prefabList.Count; i++)
+            {
+                EditorGUILayout.BeginHorizontal();
+                
+                prefabList[i] = (GameObject)EditorGUILayout.ObjectField(
+                    $"Prefab {i + 1}", 
+                    prefabList[i], 
+                    typeof(GameObject), 
+                    false
+                );
+                
+                if (GUILayout.Button("Remove", GUILayout.Width(60)))
+                {
+                    prefabList.RemoveAt(i);
+                    i--;
+                    continue;
+                }
+                
+                EditorGUILayout.EndHorizontal();
+            }
+            
+            EditorGUI.indentLevel--;
+        }
+
+        private void SavePrefabSettings()
+        {
+            string settings = JsonUtility.ToJson(new PrefabSettings
+            {
+                level1Prefabs = level1Prefabs,
+                level2Prefabs = level2Prefabs,
+                level3Prefabs = level3Prefabs
+            });
+            
+            EditorPrefs.SetString("StageCreator_PrefabSettings", settings);
+        }
+
+        private void LoadPrefabSettings()
+        {
+            string settings = EditorPrefs.GetString("StageCreator_PrefabSettings", "");
+            if (!string.IsNullOrEmpty(settings))
+            {
+                PrefabSettings prefabSettings = JsonUtility.FromJson<PrefabSettings>(settings);
+                if (prefabSettings != null)
+                {
+                    level1Prefabs = prefabSettings.level1Prefabs ?? new List<GameObject>();
+                    level2Prefabs = prefabSettings.level2Prefabs ?? new List<GameObject>();
+                    level3Prefabs = prefabSettings.level3Prefabs ?? new List<GameObject>();
+                }
+            }
+        }
+    }
+
+    [System.Serializable]
+    public class PrefabSettings
+    {
+        public List<GameObject> level1Prefabs;
+        public List<GameObject> level2Prefabs;
+        public List<GameObject> level3Prefabs;
     }
 }
