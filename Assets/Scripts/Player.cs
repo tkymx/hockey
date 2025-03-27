@@ -72,6 +72,12 @@ public class Player : MonoBehaviour
 
     public void MoveTo(Vector3 position)
     {
+        // 過去の座標と変化がなかったら処理をしない
+        if (Vector3.Distance(previousPosition, position) < 0.01f)
+        {
+            return;
+        }
+
         Vector3 oldPosition = transform.position;
         position.y = transform.position.y;
         transform.position = position;
@@ -79,6 +85,8 @@ public class Player : MonoBehaviour
         // 移動による速度を計算
         currentVelocity = (position - oldPosition) / Time.deltaTime;
         previousPosition = position;
+
+        UnityEngine.Debug.Log($"Player moved to: {position}, Velocity: {currentVelocity}");
     }
 
     private void OnCollisionEnter(Collision collision)

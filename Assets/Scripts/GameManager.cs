@@ -8,6 +8,12 @@ public class GameManager : MonoBehaviour
     [SerializeField] private PlayerManager playerManager;
     [SerializeField] private MouseInputController mouseInputController;
     [SerializeField] private CameraController cameraController;
+    [SerializeField] private ScoreManager scoreManager;
+    [SerializeField] private TimeManager timeManager;
+    
+    [Header("UI References")]
+    [SerializeField] private GameHUDView gameHUDView;
+    [SerializeField] private GameOverMenuView gameOverMenuView;
     
     [Header("Game Elements")]
     [SerializeField] private PuckController puckController;
@@ -15,7 +21,6 @@ public class GameManager : MonoBehaviour
     
     private List<DestructibleObject> destructibleObjects = new List<DestructibleObject>();
     private bool isGameActive = false;
-    private int score = 0;
 
     private void Start()
     {
@@ -24,16 +29,35 @@ public class GameManager : MonoBehaviour
 
     private void Initialize()
     {
-        if (stageManager == null || playerManager == null || mouseInputController == null || cameraController == null)
+        if (stageManager == null || playerManager == null || mouseInputController == null || 
+            cameraController == null || scoreManager == null || timeManager == null ||
+            gameHUDView == null || gameOverMenuView == null)
         {
             Debug.LogError("Required components are not assigned to GameManager!");
             return;
         }
 
+        // イベントの登録
+        timeManager.OnTimeChanged.AddListener(HandleTimeChanged);
+        timeManager.OnTimeUp.AddListener(HandleGameOver);
+        gameOverMenuView.OnRestartRequested.AddListener(RestartGame);
+        
+        StartGame();
+    }
+
+    private void StartGame()
+    {
         stageManager.Initialize();
         stageManager.LoadStage();
         
         playerManager.Initialize();
+        
+        // スコアのリセット
+        scoreManager.ResetScore();
+        
+        // 時間のリセットと開始
+        timeManager.ResetTimer();
+        timeManager.StartTimer();
         
         // 破壊可能オブジェクトを収集
         CollectDestructibleObjects();
@@ -42,6 +66,7 @@ public class GameManager : MonoBehaviour
         InitializePuck();
         
         isGameActive = true;
+        gameOverMenuView.Hide();
     }
 
     private void Update()
@@ -121,8 +146,27 @@ public class GameManager : MonoBehaviour
     // オブジェクトが破壊された時の処理
     private void HandleObjectDestroyed(DestructibleObject obj, int points)
     {
-        score += points;
-        Debug.Log($"オブジェクトが破壊されました！ 現在のスコア: {score}");
+        scoreManager.AddPoints(points);
+        gameHUDView.UpdateScore(scoreManager.GetCurrentScore());
+    }
+    
+    private void HandleTimeChanged(float remainingTime)
+    {
+        gameHUDView.UpdateTime(remainingTime);
+    }
+    
+    private void HandleGameOver()
+    {
+        isGameActive = false;
+        gameOverMenuView.Show(scoreManager.GetCurrentScore(), scoreManager.GetHighScore());
+    }
+    
+    private void RestartGame()
+    {
+        // ステージをリセット
+        ResetStage();
+        // ゲームを開始
+        StartGame();
     }
     
     // ステージをリセット
@@ -145,20 +189,19 @@ public class GameManager : MonoBehaviour
         
         // 破壊されたオブジェクトを再度収集
         CollectDestructibleObjects();
-        
-        // スコアをリセット
-        score = 0;
     }
     
     // ゲームの一時停止/再開
     public void SetGameActive(bool active)
     {
         isGameActive = active;
-    }
-    
-    // 現在のスコアを取得
-    public int GetScore()
-    {
-        return score;
+        if (active)
+        {
+            timeManager.StartTimer();
+        }
+        else
+        {
+            timeManager.StopTimer();
+        }
     }
 }
