@@ -12,9 +12,18 @@ public class Player : MonoBehaviour
     [SerializeField] private int experiencePoints = 0;
     [SerializeField] private int[] experienceThresholds = { 0, 100, 300, 600, 1000 }; // レベルアップに必要な経験値
 
+    [Header("Growth Settings")]
+    [SerializeField] private int growthStage = 1;
+    [SerializeField] private int maxGrowthStage = 3;
+    [SerializeField] private float[] stageScales = { 0.8f, 1.0f, 1.2f };
+    [SerializeField] private float[] stageMass = { 1.5f, 2.0f, 2.5f };
+    [SerializeField] private float[] stageCollisionForce = { 2.0f, 2.5f, 3.0f };
+
     public int Level => level;
+    public int GrowthStage => growthStage;
 
     public event Action<int> OnLevelChanged;
+    public event Action<int> OnGrowthStageChanged;
 
     private Vector3 previousPosition;
     private Vector3 currentVelocity;
@@ -46,6 +55,9 @@ public class Player : MonoBehaviour
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezePositionY;
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
         rb.interpolation = RigidbodyInterpolation.None; // 補間を無効化
+
+        // 成長段階の初期設定を適用
+        ApplyGrowthStageSettings(growthStage);
     }
 
     private void Update()
@@ -129,5 +141,37 @@ public class Player : MonoBehaviour
         }
 
         return didLevelUp;
+    }
+
+    // 成長段階を更新する
+    public void UpdateGrowthStage(int newStage)
+    {
+        if (newStage <= 0 || newStage > maxGrowthStage)
+            return;
+
+        if (growthStage != newStage)
+        {
+            growthStage = newStage;
+            ApplyGrowthStageSettings(growthStage);
+            OnGrowthStageChanged?.Invoke(growthStage);
+        }
+    }
+
+    // 成長段階に応じた設定を適用する
+    private void ApplyGrowthStageSettings(int stage)
+    {
+        int index = Mathf.Clamp(stage - 1, 0, stageScales.Length - 1);
+        
+        // スケールの更新
+        transform.localScale = new Vector3(stageScales[index], stageScales[index], stageScales[index]);
+        
+        // 物理パラメータの更新
+        mass = stageMass[index];
+        collisionForceMultiplier = stageCollisionForce[index];
+        
+        if (rb != null)
+        {
+            rb.mass = mass;
+        }
     }
 }

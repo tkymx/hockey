@@ -10,6 +10,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private CameraController cameraController;
     [SerializeField] private ScoreManager scoreManager;
     [SerializeField] private TimeManager timeManager;
+    [SerializeField] private GrowthManager growthManager;
     
     [Header("UI References")]
     [SerializeField] private GameHUDView gameHUDView;
@@ -31,7 +32,7 @@ public class GameManager : MonoBehaviour
     {
         if (stageManager == null || playerManager == null || mouseInputController == null || 
             cameraController == null || scoreManager == null || timeManager == null ||
-            gameHUDView == null || gameOverMenuView == null)
+            gameHUDView == null || gameOverMenuView == null || growthManager == null)
         {
             Debug.LogError("Required components are not assigned to GameManager!");
             return;
@@ -44,7 +45,10 @@ public class GameManager : MonoBehaviour
         timeManager.OnTimeUp.AddListener(HandleGameOver);
         gameOverMenuView.OnRestartRequested.AddListener(RestartGame);
 
-        // プレイヤーのレベル変更イベントを購読
+        // GrowthManagerの初期化
+        growthManager.Initialize(playerManager, puckController);
+
+        // プレイヤーのレベル変更イベントを購読（UI更新用）
         Player player = playerManager.GetPlayer();
         if (player != null)
         {
@@ -214,6 +218,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // プレイヤーのレベルが変更された時のUIの更新処理のみ
     private void HandlePlayerLevelChanged(int newLevel)
     {
         if (gameHUDView != null)

@@ -186,6 +186,24 @@ MonoBehaviour:
   mass: 1
   frictionCoefficient: 0.95
   maxSpeed: 20
+  growthStage: 1
+  maxGrowthStage: 3
+  stageScales:
+  - 0.5
+  - 1
+  - 2
+  stageMass:
+  - 0.5
+  - 1
+  - 2
+  stageMaxSpeed:
+  - 5
+  - 15
+  - 25
+  stageFriction:
+  - 0.93
+  - 0.95
+  - 0.97
 --- !u!114 &1599307697745337965
 MonoBehaviour:
   m_ObjectHideFlags: 0
