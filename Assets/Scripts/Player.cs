@@ -76,6 +76,11 @@ public class Player : MonoBehaviour
         {
             playerCollider.enabled = active;
         }
+        if (rb != null)
+        {
+            // 物理的な当たり判定も同時に有効/無効化
+            rb.detectCollisions = active;
+        }
     }
 
     public void SetPosition(Vector3 position)
