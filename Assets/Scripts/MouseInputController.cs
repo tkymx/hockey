@@ -17,7 +17,21 @@ public class MouseInputController : MonoBehaviour
 
     public Vector3 GetMouseWorldPosition()
     {
-        Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+        Vector3 screenPosition;
+        if (Input.touchCount > 0)
+        {
+            screenPosition = Input.touches[0].position;
+        }
+        else if (Input.GetMouseButton(0))
+        {
+            screenPosition = Input.mousePosition;
+        }
+        else
+        {
+            return Vector3.zero;
+        }
+
+        Ray ray = mainCamera.ScreenPointToRay(screenPosition);
         float enter;
 
         if (groundPlane.Raycast(ray, out enter))

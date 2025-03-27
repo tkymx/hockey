@@ -62,7 +62,7 @@ public class GameManager : MonoBehaviour
     
     private void HandlePlayerMovement()
     {
-        if (Input.GetMouseButton(0)) // 左クリック中
+        if (Input.touchCount > 0 || Input.GetMouseButton(0)) // タッチ入力またはマウス入力
         {
             Vector3 mousePosition = mouseInputController.GetMouseWorldPosition();
             Player player = playerManager.GetPlayer();
