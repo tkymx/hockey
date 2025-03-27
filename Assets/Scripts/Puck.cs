@@ -12,8 +12,6 @@ public class Puck : MonoBehaviour
     private Rigidbody rb;
     private SphereCollider sphereCollider;
     private PuckView puckView;
-    
-    public float StrikeForceMultiplier { get; set; } = 10.0f;
 
     private void Awake()
     {
@@ -69,9 +67,6 @@ public class Puck : MonoBehaviour
     
     public void ApplyForce(Vector3 force)
     {
-        // 力を適用する前に既存の速度をリセット
-        rb.linearVelocity = Vector3.zero;
-        
         // 力を適用
         rb.AddForce(new Vector3(force.x, 0, force.z), ForceMode.Impulse);
         

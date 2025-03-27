@@ -7,6 +7,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private StageManager stageManager;
     [SerializeField] private PlayerManager playerManager;
     [SerializeField] private MouseInputController mouseInputController;
+    [SerializeField] private CameraController cameraController;
     
     [Header("Game Elements")]
     [SerializeField] private PuckController puckController;
@@ -23,7 +24,7 @@ public class GameManager : MonoBehaviour
 
     private void Initialize()
     {
-        if (stageManager == null || playerManager == null || mouseInputController == null)
+        if (stageManager == null || playerManager == null || mouseInputController == null || cameraController == null)
         {
             Debug.LogError("Required components are not assigned to GameManager!");
             return;
@@ -49,11 +50,13 @@ public class GameManager : MonoBehaviour
 
         // プレイヤーの移動処理
         HandlePlayerMovement();
-        
-        // パックによる衝突の処理
-        if (puckController != null)
+
+        // カメラの位置更新
+        if (cameraController != null && stageManager != null)
         {
-            puckController.CheckCollisions(destructibleObjects);
+            Vector3 stageCenter = stageManager.GetStageCenter();
+            Vector3 stageBounds = stageManager.GetStageBounds();
+            cameraController.UpdateCameraPosition(stageCenter, stageBounds);
         }
     }
     

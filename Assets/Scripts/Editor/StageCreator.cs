@@ -26,11 +26,6 @@ namespace HockeyEditor
         private bool autoAddComponents = true;
         private bool placingDestructible = false;
         private Vector3 lastPlacedPosition;
-        
-        [Header("Puck Settings")]
-        private GameObject puckPrefab;
-        private Vector3 puckSpawnPosition = new Vector3(0, 0.5f, -10f);
-        private bool createPuck = true;
 
         [MenuItem("Hockey/Create Stage")]
         public static void ShowWindow()
@@ -96,30 +91,10 @@ namespace HockeyEditor
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.Space();
-            EditorGUILayout.LabelField("Puck Settings", EditorStyles.boldLabel);
-            createPuck = EditorGUILayout.Toggle("Create Puck", createPuck);
-            puckPrefab = (GameObject)EditorGUILayout.ObjectField("Puck Prefab", puckPrefab, typeof(GameObject), false);
-            puckSpawnPosition = EditorGUILayout.Vector3Field("Puck Spawn Position", puckSpawnPosition);
-            
-            EditorGUILayout.Space();
             
             if (GUILayout.Button("Create Stage"))
             {
                 CreateStage();
-            }
-            
-            // デバッグ機能
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("Debug Tools", EditorStyles.boldLabel);
-            
-            if (GUILayout.Button("Create Test Prefabs"))
-            {
-                CreateTestPrefabs();
-            }
-            
-            if (GUILayout.Button("Setup Test Scene"))
-            {
-                SetupTestScene();
             }
         }
 
@@ -166,10 +141,6 @@ namespace HockeyEditor
             else
             {
                 destructible = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                if (destructibleMaterial != null)
-                {
-                    destructible.GetComponent<MeshRenderer>().material = destructibleMaterial;
-                }
             }
 
             if (destructible != null)
@@ -265,12 +236,6 @@ namespace HockeyEditor
                 PlaceDestructibleObjects(stageObject);
             }
             
-            // パックの配置
-            if (createPuck)
-            {
-                CreatePuck(stageObject);
-            }
-            
             // プレハブを保存
             HockeyPrefabManager.EnsurePrefabDirectory();
             string completePath = HockeyPrefabManager.PrefabPath + "/Stage.prefab";
@@ -359,11 +324,6 @@ namespace HockeyEditor
                     {
                         destructible = GameObject.CreatePrimitive(PrimitiveType.Cube);
                         destructible.transform.SetParent(destructiblesContainer.transform);
-                        
-                        if (destructibleMaterial != null)
-                        {
-                            destructible.GetComponent<MeshRenderer>().material = destructibleMaterial;
-                        }
                     }
                     
                     destructible.name = "Destructible_" + i;
@@ -391,218 +351,6 @@ namespace HockeyEditor
                     usedPositions.Add(position);
                 }
             }
-        }
-        
-        private void CreatePuck(GameObject parent)
-        {
-            GameObject puckObject;
-            
-            if (puckPrefab != null)
-            {
-                puckObject = PrefabUtility.InstantiatePrefab(puckPrefab, parent.transform) as GameObject;
-            }
-            else
-            {
-                puckObject = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                puckObject.name = "Puck";
-                puckObject.transform.SetParent(parent.transform);
-                puckObject.transform.localScale = new Vector3(1f, 0.2f, 1f);
-                
-                Renderer renderer = puckObject.GetComponent<Renderer>();
-                if (renderer != null)
-                {
-                    renderer.material.color = Color.black;
-                }
-            }
-            
-            puckObject.transform.position = puckSpawnPosition;
-            
-            if (autoAddComponents)
-            {
-                Puck puckComp = puckObject.GetComponent<Puck>();
-                if (puckComp == null)
-                {
-                    puckComp = puckObject.AddComponent<Puck>();
-                }
-                
-                PuckView puckView = puckObject.GetComponent<PuckView>();
-                if (puckView == null)
-                {
-                    puckView = puckObject.AddComponent<PuckView>();
-                    puckView.Initialize(puckComp);
-                }
-                
-                GameObject puckControllerObj = new GameObject("PuckController");
-                puckControllerObj.transform.SetParent(parent.transform);
-                
-                PuckController puckController = puckControllerObj.AddComponent<PuckController>();
-                puckController.Initialize(puckComp, puckView);
-            }
-        }
-        
-        private void CreateTestPrefabs()
-        {
-            // 必要なフォルダの作成
-            string prefabPath = "Assets/Resources/Prefabs";
-            if (!AssetDatabase.IsValidFolder(prefabPath))
-            {
-                Directory.CreateDirectory(prefabPath);
-            }
-            
-            // 爆発エフェクトのプレハブ作成
-            GameObject explosionEffect = new GameObject("ExplosionEffect");
-            ParticleSystem ps = explosionEffect.AddComponent<ParticleSystem>();
-            
-            var main = ps.main;
-            main.startLifetime = 1f;
-            main.startSpeed = 5f;
-            main.startSize = 0.5f;
-            main.startColor = new ParticleSystem.MinMaxGradient(Color.yellow, Color.red);
-            
-            var shape = ps.shape;
-            shape.shapeType = ParticleSystemShapeType.Sphere;
-            shape.radius = 0.1f;
-            
-            var emission = ps.emission;
-            emission.enabled = true;
-            var burst = new ParticleSystem.Burst(0.0f, 30);
-            emission.SetBurst(0, burst);
-            
-            string explosionPath = prefabPath + "/ExplosionEffect.prefab";
-            PrefabUtility.SaveAsPrefabAsset(explosionEffect, explosionPath);
-            DestroyImmediate(explosionEffect);
-            
-            // 破壊可能オブジェクトのプレハブ作成
-            GameObject destructibleObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            destructibleObj.name = "DestructibleCube";
-            destructibleObj.transform.localScale = new Vector3(1.5f, 1.5f, 1.5f);
-            
-            Renderer renderer = destructibleObj.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                renderer.material.color = new Color(0.8f, 0.2f, 0.2f);
-            }
-            
-            DestructibleObject destructibleComp = destructibleObj.AddComponent<DestructibleObject>();
-            DestructibleObjectView destructibleView = destructibleObj.AddComponent<DestructibleObjectView>();
-            
-            GameObject loadedExplosion = AssetDatabase.LoadAssetAtPath<GameObject>(explosionPath);
-            if (loadedExplosion != null)
-            {
-                var field = typeof(DestructibleObject).GetField("explosionPrefab", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-                if (field != null)
-                {
-                    field.SetValue(destructibleComp, loadedExplosion);
-                }
-            }
-            
-            destructibleView.Initialize(destructibleComp);
-            
-            string destructiblePath = prefabPath + "/DestructibleCube.prefab";
-            PrefabUtility.SaveAsPrefabAsset(destructibleObj, destructiblePath);
-            DestroyImmediate(destructibleObj);
-            
-            // パックのプレハブ作成
-            GameObject puckObj = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            puckObj.name = "Puck";
-            puckObj.transform.localScale = new Vector3(1f, 0.2f, 1f);
-            
-            Renderer puckRenderer = puckObj.GetComponent<Renderer>();
-            if (puckRenderer != null)
-            {
-                puckRenderer.material.color = Color.black;
-            }
-            
-            Puck puckComp = puckObj.AddComponent<Puck>();
-            PuckView puckView = puckObj.AddComponent<PuckView>();
-            puckView.Initialize(puckComp);
-            
-            string puckPath = prefabPath + "/Puck.prefab";
-            PrefabUtility.SaveAsPrefabAsset(puckObj, puckPath);
-            DestroyImmediate(puckObj);
-            
-            EditorUtility.DisplayDialog("Success", "Test prefabs have been created!", "OK");
-        }
-        
-        private void SetupTestScene()
-        {
-            // まずテスト用のプレハブを作成
-            CreateTestPrefabs();
-            
-            // 新しいシーン作成
-            if (EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
-            {
-                EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects);
-            }
-            else
-            {
-                return;
-            }
-            
-            GameObject stageObject = new GameObject("Stage");
-            
-            GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            ground.name = "Ground";
-            ground.transform.SetParent(stageObject.transform);
-            ground.transform.localScale = new Vector3(3f, 1, 4f);
-            
-            CreateWall(stageObject, new Vector3(0, 1, 20), new Vector3(30, 2, 0.5f));
-            CreateWall(stageObject, new Vector3(0, 1, -20), new Vector3(30, 2, 0.5f));
-            CreateWall(stageObject, new Vector3(15, 1, 0), new Vector3(0.5f, 2, 40));
-            CreateWall(stageObject, new Vector3(-15, 1, 0), new Vector3(0.5f, 2, 40));
-            
-            // プレイヤーの作成と配置
-            GameObject player = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            player.name = "Player";
-            player.transform.position = new Vector3(0, 0.5f, -15);
-            player.transform.localScale = new Vector3(1.5f, 1.5f, 1.5f);
-            
-            Renderer playerRenderer = player.GetComponent<Renderer>();
-            if (playerRenderer != null)
-            {
-                playerRenderer.material.color = new Color(0.2f, 0.6f, 1f);
-            }
-            
-            player.AddComponent<Player>();
-            
-            // パックの読み込みと配置
-            GameObject puckPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Resources/Prefabs/Puck.prefab");
-            if (puckPrefab != null)
-            {
-                GameObject puckObj = PrefabUtility.InstantiatePrefab(puckPrefab) as GameObject;
-                puckObj.transform.position = new Vector3(0, 0.5f, -10);
-            }
-            
-            // 破壊可能オブジェクトの配置
-            GameObject destructiblePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Resources/Prefabs/DestructibleCube.prefab");
-            if (destructiblePrefab != null)
-            {
-                for (int i = 0; i < 10; i++)
-                {
-                    float x = Random.Range(-10f, 10f);
-                    float z = Random.Range(-5f, 15f);
-                    
-                    GameObject obj = PrefabUtility.InstantiatePrefab(destructiblePrefab) as GameObject;
-                    obj.transform.position = new Vector3(x, 0.75f, z);
-                    obj.transform.rotation = Quaternion.Euler(0, Random.Range(0, 360), 0);
-                }
-            }
-            
-            // マネージャーの作成と設定
-            GameObject gameManager = new GameObject("GameManager");
-            GameObject stageManager = new GameObject("StageManager");
-            GameObject playerManager = new GameObject("PlayerManager");
-            GameObject mouseInput = new GameObject("MouseInputController");
-            
-            GameManager gm = gameManager.AddComponent<GameManager>();
-            StageManager sm = stageManager.AddComponent<StageManager>();
-            PlayerManager pm = playerManager.AddComponent<PlayerManager>();
-            MouseInputController mic = mouseInput.AddComponent<MouseInputController>();
-            
-            // シーンの保存
-            EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(), "Assets/Scenes/TestScene.unity");
-            
-            EditorUtility.DisplayDialog("Success", "Test scene has been set up!", "OK");
         }
     }
 }

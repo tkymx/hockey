@@ -4,6 +4,7 @@ public class StageManager : MonoBehaviour
 {
     [SerializeField] private GameObject stagePrefab;
     private GameObject currentStage;
+    private Bounds stageBounds;
 
     public void Initialize()
     {
@@ -22,6 +23,36 @@ public class StageManager : MonoBehaviour
         }
 
         currentStage = Instantiate(stagePrefab);
+        CalculateStageBounds();
+    }
+
+    private void CalculateStageBounds()
+    {
+        if (currentStage == null) return;
+
+        // ステージの全てのColliderを取得してBoundsを計算
+        Collider[] colliders = currentStage.GetComponentsInChildren<Collider>();
+        if (colliders.Length == 0)
+        {
+            Debug.LogWarning("No colliders found in stage!");
+            return;
+        }
+
+        stageBounds = colliders[0].bounds;
+        foreach (Collider collider in colliders)
+        {
+            stageBounds.Encapsulate(collider.bounds);
+        }
+    }
+
+    public Vector3 GetStageCenter()
+    {
+        return currentStage != null ? currentStage.transform.position : Vector3.zero;
+    }
+
+    public Vector3 GetStageBounds()
+    {
+        return stageBounds.size;
     }
 
     public Transform GetStageTransform()
