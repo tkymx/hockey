@@ -5,7 +5,9 @@ public class Puck : MonoBehaviour
 {
     [Header("Puck Properties")]
     [SerializeField] private float mass = 1.0f;
-    [SerializeField] private float frictionCoefficient = 0.95f;
+    [SerializeField] private float frictionCoefficient = 0.995f; // 摩擦をほぼなしに調整（0.95→0.995）
+    [SerializeField] private float airResistance = 0.998f; // 空気抵抗の追加
+    [SerializeField] private float minVelocityThreshold = 0.05f; // これ以下の速度で停止と見なす
     [SerializeField] private float maxSpeed = 20.0f;
 
     [Header("Growth Settings")]
@@ -14,7 +16,7 @@ public class Puck : MonoBehaviour
     [SerializeField] private float[] stageScales = { 0.8f, 1.0f, 1.2f };
     [SerializeField] private float[] stageMass = { 0.8f, 1.0f, 1.3f };
     [SerializeField] private float[] stageMaxSpeed = { 15.0f, 20.0f, 25.0f };
-    [SerializeField] private float[] stageFriction = { 0.93f, 0.95f, 0.97f };
+    [SerializeField] private float[] stageFriction = { 0.993f, 0.995f, 0.997f }; // 全ての段階で摩擦を小さく設定
 
     public int GrowthStage => growthStage;
     
@@ -45,20 +47,24 @@ public class Puck : MonoBehaviour
         
         // パックの物理設定
         rb.mass = mass;
-        rb.linearDamping = 0;
-        rb.angularDamping = 0.1f;
+        rb.linearDamping = 0; // ダンピングはなし
+        rb.angularDamping = 0.05f; // 回転の減衰もわずかに
         rb.useGravity = false;
         rb.isKinematic = false;
         rb.constraints = RigidbodyConstraints.FreezePositionY | RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+        rb.collisionDetectionMode = CollisionDetectionMode.Continuous; // 高速移動時の衝突検出を改善
         
         // 当たり判定の設定
         sphereCollider.radius = transform.localScale.x / 2;
-        sphereCollider.material = new PhysicsMaterial
+        PhysicsMaterial puckMaterial = new PhysicsMaterial
         {
-            bounciness = 0.8f,
+            dynamicFriction = 0.01f, // ほとんど摩擦なし
+            staticFriction = 0.01f, // ほとんど摩擦なし
+            bounciness = 0.9f, // 弾性を少し高く
             frictionCombine = PhysicsMaterialCombine.Minimum,
             bounceCombine = PhysicsMaterialCombine.Maximum
         };
+        sphereCollider.material = puckMaterial;
 
         // 成長段階の初期設定を適用
         ApplyGrowthStageSettings(growthStage);
@@ -66,8 +72,8 @@ public class Puck : MonoBehaviour
     
     private void FixedUpdate()
     {
-        // 現在の速度をチェックして摩擦を適用
-        if (rb.linearVelocity.sqrMagnitude > 0.01f)
+        // 現在の速度をチェックして空気抵抗と微小な摩擦を適用
+        if (rb.linearVelocity.sqrMagnitude > minVelocityThreshold * minVelocityThreshold)
         {
             isMoving = true;
             ApplyFriction();
@@ -102,7 +108,10 @@ public class Puck : MonoBehaviour
     
     private void ApplyFriction()
     {
-        // 摩擦係数を適用して速度を減衰
+        // エアホッケーでは、摩擦はほとんどなく、主に空気抵抗で徐々に減速
+        rb.linearVelocity *= airResistance; // まず空気抵抗を適用
+
+        // 非常に小さな摩擦
         rb.linearVelocity *= frictionCoefficient;
     }
     
