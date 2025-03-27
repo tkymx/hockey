@@ -32,6 +32,7 @@ public class Player : MonoBehaviour
         // 物理設定
         rb.mass = mass;
         rb.useGravity = false;
+        rb.isKinematic = true; // 常にKinematicモードを有効にして外力の影響を受けないようにする
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezePositionY;
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
         rb.interpolation = RigidbodyInterpolation.None; // 補間を無効化
@@ -52,10 +53,6 @@ public class Player : MonoBehaviour
         if (playerCollider != null)
         {
             playerCollider.enabled = active;
-        }
-        if (rb != null)
-        {
-            rb.isKinematic = !active; // アクティブでない時は物理演算を無効化
         }
     }
 
