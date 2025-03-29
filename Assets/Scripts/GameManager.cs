@@ -45,12 +45,6 @@ public class GameManager : MonoBehaviour
         // プレイヤーの取得
         Player player = playerManager.GetPlayer();
         
-        // StageManagerの初期化
-        stageManager.Initialize();
-        
-        // StageControllerの初期化（プレイヤーとStageManagerの参照を渡す）
-        stageController.Initialize(player, stageManager);
-        
         StartGame();
 
         // イベントの登録
@@ -71,9 +65,12 @@ public class GameManager : MonoBehaviour
 
     private void StartGame()
     {
+        // StageManagerの初期化
+        stageManager.Initialize();
         stageManager.LoadStage();
-        playerManager.Initialize();
         
+        playerManager.Initialize();
+
         // スコアのリセット
         scoreManager.ResetScore();
         
@@ -91,6 +88,9 @@ public class GameManager : MonoBehaviour
         if (playerManager != null)
         {
             playerManager.ResetPlayer();
+ 
+            // StageControllerの初期化（プレイヤーとStageManagerの参照を渡す）
+            stageController.Initialize(playerManager.GetPlayer(), stageManager);    
         }
         
         // プレイヤーのレベル変更イベントを再購読（UI更新用）
@@ -116,11 +116,15 @@ public class GameManager : MonoBehaviour
         HandlePlayerMovement();
 
         // カメラの位置更新
-        if (cameraController != null && stageManager != null)
+        if (cameraController != null && stageController != null)
         {
-            Vector3 stageCenter = stageManager.GetStageCenter();
-            Vector3 stageBounds = stageManager.GetStageBounds();
-            cameraController.UpdateCameraPosition(stageCenter, stageBounds);
+            ZoneController currentZone = stageController.GetCurrentZone();
+            if (currentZone != null)
+            {
+                Vector3 zonePosition = currentZone.transform.position;
+                Vector3 zoneBounds = stageController.GetCurrentZoneBounds();
+                cameraController.UpdateCameraPosition(zonePosition, zoneBounds);
+            }
         }
     }
     
