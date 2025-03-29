@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEditor.SceneManagement;
 using System.Collections.Generic;
 using UnityEngine.SceneManagement; // SceneManagementの参照を追加
 
@@ -12,6 +13,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private ScoreManager scoreManager;
     [SerializeField] private TimeManager timeManager;
     [SerializeField] private GrowthManager growthManager;
+    [SerializeField] private StageController stageController;
     
     [Header("UI References")]
     [SerializeField] private GameHUDView gameHUDView;
@@ -33,11 +35,21 @@ public class GameManager : MonoBehaviour
     {
         if (stageManager == null || playerManager == null || mouseInputController == null || 
             cameraController == null || scoreManager == null || timeManager == null ||
-            gameHUDView == null || gameOverMenuView == null || growthManager == null)
+            gameHUDView == null || gameOverMenuView == null || growthManager == null ||
+            stageController == null)
         {
             Debug.LogError("Required components are not assigned to GameManager!");
             return;
         }
+        
+        // プレイヤーの取得
+        Player player = playerManager.GetPlayer();
+        
+        // StageManagerの初期化
+        stageManager.Initialize();
+        
+        // StageControllerの初期化（プレイヤーとStageManagerの参照を渡す）
+        stageController.Initialize(player, stageManager);
         
         StartGame();
 
@@ -50,7 +62,6 @@ public class GameManager : MonoBehaviour
         growthManager.Initialize(playerManager, puckController);
 
         // プレイヤーのレベル変更イベントを購読（UI更新用）
-        Player player = playerManager.GetPlayer();
         if (player != null)
         {
             gameHUDView.UpdateLevel(player.Level);
@@ -60,9 +71,7 @@ public class GameManager : MonoBehaviour
 
     private void StartGame()
     {
-        stageManager.Initialize();
         stageManager.LoadStage();
-        
         playerManager.Initialize();
         
         // スコアのリセット

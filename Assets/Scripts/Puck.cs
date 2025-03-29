@@ -29,6 +29,8 @@ public class Puck : MonoBehaviour
     private PuckView puckView;
     private Player lastHitPlayer;
 
+    public Rigidbody Rigidbody => rb;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();

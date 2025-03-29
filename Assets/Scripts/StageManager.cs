@@ -45,6 +45,11 @@ public class StageManager : MonoBehaviour
         }
     }
 
+    public GameObject GetCurrentStage()
+    {
+        return currentStage;
+    }
+
     public Vector3 GetStageCenter()
     {
         return currentStage != null ? currentStage.transform.position : Vector3.zero;

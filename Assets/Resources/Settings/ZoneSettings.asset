@@ -1,0 +1,87 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: be8dd68fff7cf49298a42af06b57ca38, type: 3}
+  m_Name: ZoneSettings
+  m_EditorClassIdentifier: 
+  defaultWallMaterial: {fileID: 0}
+  defaultFogMaterial: {fileID: 0}
+  zones:
+  - radius: 10
+    requiredLevel: 1
+    wallHeight: 3
+    wallThickness: 0.3
+    wallMaterial: {fileID: 0}
+    enableFog: 1
+    fogHeight: 5
+    fogColor: {r: 1, g: 1, b: 1, a: 0.5}
+    objectDensity: 0.05
+    minObjectDistance: 3
+    destructiblePrefabs:
+    - {fileID: 107626, guid: 236356a33a1a34a8d92b4f0f122758f7, type: 3}
+    damageMultiplier: 1
+    scoreMultiplier: 1
+  - radius: 20
+    requiredLevel: 2
+    wallHeight: 3
+    wallThickness: 0.3
+    wallMaterial: {fileID: 0}
+    enableFog: 1
+    fogHeight: 5
+    fogColor: {r: 0.8584906, g: 0.56287825, b: 0.56287825, a: 0.5}
+    objectDensity: 0.05
+    minObjectDistance: 3
+    destructiblePrefabs:
+    - {fileID: 107626, guid: 236356a33a1a34a8d92b4f0f122758f7, type: 3}
+    damageMultiplier: 1
+    scoreMultiplier: 1
+  - radius: 30
+    requiredLevel: 3
+    wallHeight: 3
+    wallThickness: 0.3
+    wallMaterial: {fileID: 0}
+    enableFog: 1
+    fogHeight: 5
+    fogColor: {r: 0.5518868, g: 0.95936847, b: 1, a: 0.5}
+    objectDensity: 0.05
+    minObjectDistance: 3
+    destructiblePrefabs:
+    - {fileID: 107626, guid: ee78a677c597346f1b385fb1392a01db, type: 3}
+    damageMultiplier: 1
+    scoreMultiplier: 1
+  - radius: 40
+    requiredLevel: 4
+    wallHeight: 3
+    wallThickness: 0.3
+    wallMaterial: {fileID: 0}
+    enableFog: 1
+    fogHeight: 5
+    fogColor: {r: 0.5613208, g: 1, b: 0.5619228, a: 0.5}
+    objectDensity: 0.05
+    minObjectDistance: 3
+    destructiblePrefabs:
+    - {fileID: 107626, guid: ee78a677c597346f1b385fb1392a01db, type: 3}
+    damageMultiplier: 1
+    scoreMultiplier: 1
+  - radius: 50
+    requiredLevel: 5
+    wallHeight: 3
+    wallThickness: 0.3
+    wallMaterial: {fileID: 0}
+    enableFog: 1
+    fogHeight: 5
+    fogColor: {r: 0.43867922, g: 0.5311067, b: 1, a: 0.5}
+    objectDensity: 0.05
+    minObjectDistance: 3
+    destructiblePrefabs:
+    - {fileID: 107626, guid: 6d86955e8fbdd47338811b200052d2bf, type: 3}
+    damageMultiplier: 1
+    scoreMultiplier: 1

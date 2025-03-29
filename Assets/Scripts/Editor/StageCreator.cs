@@ -14,21 +14,11 @@ namespace HockeyEditor
         private HockeyPrefabManager prefabManager;
 
         [Header("Stage Settings")]
-        private float stageWidth = 30f;
-        private float stageLength = 40f;
         private Material stageMaterial;
         
-        [Header("Destructible Object Settings")]
-        private GameObject destructiblePrefab;
-        private int destructibleCount = 10;
-        private float playerAreaClearance = 10f;
-        private Material destructibleMaterial;
-        private bool autoAddComponents = true;
-        private bool placingDestructible = false;
-        private Vector3 lastPlacedPosition;
-        [SerializeField] private List<GameObject> level1Prefabs; // 段階1のプレファブリスト
-        [SerializeField] private List<GameObject> level2Prefabs; // 段階2のプレファブリスト
-        [SerializeField] private List<GameObject> level3Prefabs; // 段階3のプレファブリスト
+        [SerializeField] private ZoneSettings zoneSettings;
+        private bool showZoneSettings = false;
+        private Vector2 zoneSettingsScroll;
 
         [MenuItem("Hockey/Create Stage")]
         public static void ShowWindow()
@@ -39,15 +29,8 @@ namespace HockeyEditor
         private void OnEnable()
         {
             prefabManager = HockeyPrefabManager.Instance;
-            SceneView.duringSceneGui += OnSceneGUI;
-            LoadPrefabSettings();
         }
 
-        private void OnDisable()
-        {
-            SceneView.duringSceneGui -= OnSceneGUI;
-            SavePrefabSettings();
-        }
 
         private void OnGUI()
         {
@@ -60,66 +43,12 @@ namespace HockeyEditor
             
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Basic Stage Settings", EditorStyles.boldLabel);
-            stageWidth = EditorGUILayout.FloatField("Stage Width", stageWidth);
-            stageLength = EditorGUILayout.FloatField("Stage Length", stageLength);
             stageMaterial = (Material)EditorGUILayout.ObjectField("Stage Material", stageMaterial, typeof(Material), false);
             
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("Destructible Object Settings", EditorStyles.boldLabel);
-            
-            destructiblePrefab = (GameObject)EditorGUILayout.ObjectField(
-                "Destructible Prefab", 
-                destructiblePrefab ?? prefabManager.DestructiblePrefab, 
-                typeof(GameObject), 
-                false
-            );
-
-            destructibleCount = EditorGUILayout.IntField("Auto Place Count", destructibleCount);
-            playerAreaClearance = EditorGUILayout.FloatField("Player Area Clearance", playerAreaClearance);
-            destructibleMaterial = (Material)EditorGUILayout.ObjectField("Destructible Material", destructibleMaterial, typeof(Material), false);
-            autoAddComponents = EditorGUILayout.Toggle("Auto Add Components", autoAddComponents);
-
-            EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button(placingDestructible ? "Stop Placing" : "Start Placing Destructibles"))
-            {
-                placingDestructible = !placingDestructible;
-                if (placingDestructible)
-                {
-                    EditorUtility.DisplayDialog("Placement Mode", 
-                        "Click in the Scene view to place destructible objects.\nPress Esc to exit placement mode.", "OK");
-                }
-            }
-            if (GUILayout.Button("Auto Place Destructibles"))
-            {
-                AutoPlaceDestructibles();
-            }
-            EditorGUILayout.EndHorizontal();
-
+        
             EditorGUILayout.Space();
             
             EditorGUILayout.LabelField("Level Prefabs", EditorStyles.boldLabel);
-        
-            // レベル1のプレハブリスト
-            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("Level 1 Prefabs (Easiest)", EditorStyles.boldLabel);
-            DrawPrefabList(level1Prefabs);
-            EditorGUILayout.EndVertical();
-            
-            EditorGUILayout.Space();
-            
-            // レベル2のプレハブリスト
-            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("Level 2 Prefabs (Medium)", EditorStyles.boldLabel);
-            DrawPrefabList(level2Prefabs);
-            EditorGUILayout.EndVertical();
-            
-            EditorGUILayout.Space();
-            
-            // レベル3のプレハブリスト
-            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("Level 3 Prefabs (Hardest)", EditorStyles.boldLabel);
-            DrawPrefabList(level3Prefabs);
-            EditorGUILayout.EndVertical();
 
             EditorGUILayout.Space();
             
@@ -127,115 +56,163 @@ namespace HockeyEditor
             {
                 CreateStage();
             }
+
+            EditorGUILayout.Space(10);
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                showZoneSettings = EditorGUILayout.Foldout(showZoneSettings, "Zone Settings", true);
+                if (showZoneSettings)
+                {
+                    DrawZoneSettings();
+                }
+            }
         }
 
-        private void OnSceneGUI(SceneView sceneView)
+        private void DrawZoneSettings()
         {
-            if (!placingDestructible) return;
-
-            // Escキーでプレースメントモードを終了
-            if (Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.Escape)
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            
+            // ZoneSettings ScriptableObjectの参照
+            EditorGUI.BeginChangeCheck();
+            zoneSettings = (ZoneSettings)EditorGUILayout.ObjectField(
+                "Zone Settings Asset", 
+                zoneSettings, 
+                typeof(ZoneSettings), 
+                false
+            );
+            
+            if (zoneSettings == null)
             {
-                placingDestructible = false;
-                Repaint();
+                if (GUILayout.Button("Create New Zone Settings"))
+                {
+                    string path = EditorUtility.SaveFilePanelInProject(
+                        "Create Zone Settings",
+                        "ZoneSettings",
+                        "asset",
+                        "Choose where to save the Zone Settings asset"
+                    );
+                    
+                    if (!string.IsNullOrEmpty(path))
+                    {
+                        zoneSettings = CreateInstance<ZoneSettings>();
+                        AssetDatabase.CreateAsset(zoneSettings, path);
+                        AssetDatabase.SaveAssets();
+                    }
+                }
+                EditorGUILayout.EndVertical();
                 return;
             }
 
-            // マウスクリックでDestructibleオブジェクトを配置
-            if (Event.current.type == EventType.MouseDown && Event.current.button == 0)
+            EditorGUI.indentLevel++;
+            
+            // 共通マテリアル設定
+            zoneSettings.defaultWallMaterial = (Material)EditorGUILayout.ObjectField(
+                "Zone Wall Material", 
+                zoneSettings.defaultWallMaterial, 
+                typeof(Material), 
+                false
+            );
+            
+            zoneSettings.defaultFogMaterial = (Material)EditorGUILayout.ObjectField(
+                "Zone Fog Material", 
+                zoneSettings.defaultFogMaterial, 
+                typeof(Material), 
+                false
+            );
+
+            EditorGUILayout.Space(5);
+
+            // ゾーンごとの設定
+            zoneSettingsScroll = EditorGUILayout.BeginScrollView(zoneSettingsScroll);
+            
+            for (int i = 0; i < zoneSettings.zones.Length; i++)
             {
-                Ray ray = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
-                RaycastHit hit;
-                
-                if (Physics.Raycast(ray, out hit))
+                var zone = zoneSettings.zones[i];
+                if (zone == null)
                 {
-                    Vector3 position = hit.point + Vector3.up * 0.5f; // 地面から少し上に配置
-                    PlaceDestructibleObject(position);
-                    Event.current.Use();
-                }
-            }
-
-            // シーンビューの再描画を要求
-            if (Event.current.type == EventType.Layout)
-            {
-                HandleUtility.Repaint();
-            }
-        }
-
-        private void PlaceDestructibleObject(Vector3 position)
-        {
-            GameObject destructible;
-            if (destructiblePrefab != null)
-            {
-                destructible = PrefabUtility.InstantiatePrefab(destructiblePrefab) as GameObject;
-            }
-            else
-            {
-                destructible = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            }
-
-            if (destructible != null)
-            {
-                destructible.transform.position = position;
-                destructible.transform.rotation = Quaternion.Euler(0, Random.Range(0, 360), 0);
-
-                if (autoAddComponents)
-                {
-                    DestructibleObject destructibleComponent = destructible.GetComponent<DestructibleObject>();
-                    if (destructibleComponent == null)
-                    {
-                        destructibleComponent = destructible.AddComponent<DestructibleObject>();
-                    }
+                    zone = new ZoneSettings.ZoneData();
+                    zoneSettings.zones[i] = zone;
                 }
 
-                Undo.RegisterCreatedObjectUndo(destructible, "Place Destructible Object");
-            }
-
-            lastPlacedPosition = position;
-        }
-
-        private void AutoPlaceDestructibles()
-        {
-            float minX = -stageWidth/2 + 3;
-            float maxX = stageWidth/2 - 3;
-            float minZ = -stageLength/2 + playerAreaClearance;
-            float maxZ = stageLength/2 - 3;
-            
-            List<Vector3> usedPositions = new List<Vector3>();
-            float minDestructibleDistance = 4f;
-            
-            for (int i = 0; i < destructibleCount; i++)
-            {
-                Vector3 position = Vector3.zero;
-                bool validPosition = false;
-                int attempts = 0;
-                
-                while (!validPosition && attempts < 50)
+                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
                 {
-                    position = new Vector3(
-                        Random.Range(minX, maxX),
-                        1f,
-                        Random.Range(minZ, maxZ)
-                    );
+                    EditorGUILayout.LabelField($"Zone {i + 1}", EditorStyles.boldLabel);
                     
-                    validPosition = true;
-                    foreach (Vector3 usedPos in usedPositions)
+                    zone.radius = EditorGUILayout.FloatField("Radius", zone.radius);
+                    zone.requiredLevel = EditorGUILayout.IntField("Required Level", zone.requiredLevel);
+                    zone.fogColor = EditorGUILayout.ColorField("Zone Color", zone.fogColor);
+                    
+                    using (new EditorGUILayout.HorizontalScope())
                     {
-                        if (Vector3.Distance(position, usedPos) < minDestructibleDistance)
+                        EditorGUILayout.LabelField("Wall Settings", EditorStyles.boldLabel, GUILayout.Width(100));
+                        zone.wallHeight = EditorGUILayout.Slider("Height", zone.wallHeight, 0f, 10f);
+                        zone.wallThickness = EditorGUILayout.Slider("Thickness", zone.wallThickness, 0.1f, 1f);
+                    }
+                    
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        EditorGUILayout.LabelField("Fog Settings", EditorStyles.boldLabel, GUILayout.Width(100));
+                        zone.enableFog = EditorGUILayout.Toggle("Enable", zone.enableFog);
+                        if (zone.enableFog)
                         {
-                            validPosition = false;
-                            break;
+                            zone.fogHeight = EditorGUILayout.Slider("Height", zone.fogHeight, 0f, 10f);
                         }
                     }
-                    attempts++;
+
+                    EditorGUILayout.Space(5);
+                    
+                    // Destructible Prefabs Settings
+                    EditorGUILayout.LabelField("Destructible Prefabs", EditorStyles.boldLabel);
+                    
+                    if (zone.destructiblePrefabs == null)
+                    {
+                        zone.destructiblePrefabs = new List<GameObject>();
+                    }
+
+                    EditorGUI.indentLevel++;
+                    
+                    // Object Density Setting
+                    zone.objectDensity = EditorGUILayout.Slider("Object Density", zone.objectDensity, 0.01f, 0.2f);
+                    zone.minObjectDistance = EditorGUILayout.Slider("Min Distance", zone.minObjectDistance, 1f, 10f);
+
+                    // Prefab List
+                    int prefabCount = zone.destructiblePrefabs.Count;
+                    int newPrefabCount = EditorGUILayout.IntField("Prefab Count", prefabCount);
+                    
+                    if (newPrefabCount != prefabCount)
+                    {
+                        while (zone.destructiblePrefabs.Count < newPrefabCount)
+                            zone.destructiblePrefabs.Add(null);
+                        while (zone.destructiblePrefabs.Count > newPrefabCount)
+                            zone.destructiblePrefabs.RemoveAt(zone.destructiblePrefabs.Count - 1);
+                    }
+
+                    for (int j = 0; j < zone.destructiblePrefabs.Count; j++)
+                    {
+                        zone.destructiblePrefabs[j] = (GameObject)EditorGUILayout.ObjectField(
+                            $"Prefab {j + 1}",
+                            zone.destructiblePrefabs[j],
+                            typeof(GameObject),
+                            false
+                        );
+                    }
+
+                    EditorGUI.indentLevel--;
                 }
                 
-                if (validPosition)
-                {
-                    PlaceDestructibleObject(position);
-                    usedPositions.Add(position);
-                }
+                EditorGUILayout.Space(5);
             }
+            
+            EditorGUILayout.EndScrollView();
+            
+            if (GUI.changed)
+            {
+                EditorUtility.SetDirty(zoneSettings);
+                AssetDatabase.SaveAssets();
+            }
+
+            EditorGUI.indentLevel--;
+            EditorGUILayout.EndVertical();
         }
 
         private void CreateStage()
@@ -248,24 +225,10 @@ namespace HockeyEditor
             GameObject stageObject = new GameObject("Stage");
             
             // グラウンド（床）の作成
-            GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            ground.name = "Ground";
-            ground.transform.SetParent(stageObject.transform);
-            ground.transform.localScale = new Vector3(stageWidth * 0.1f, 1, stageLength * 0.1f);
+            CreateGround(stageObject);
             
-            if (stageMaterial != null)
-            {
-                ground.GetComponent<MeshRenderer>().material = stageMaterial;
-            }
-            
-            // 壁の追加
-            CreateWalls(stageObject);
-            
-            // 破壊可能オブジェクトの追加
-            if (prefabManager.DestructiblePrefab != null || autoAddComponents)
-            {
-                PlaceDestructibleObjects(stageObject);
-            }
+            // ゾーンの作成
+            CreateZones(stageObject);
             
             // プレハブを保存
             HockeyPrefabManager.EnsurePrefabDirectory();
@@ -276,267 +239,289 @@ namespace HockeyEditor
             
             EditorUtility.DisplayDialog("Success", "Stage prefab has been created!", "OK");
         }
-        
-        private void CreateWalls(GameObject parent)
-        {
-            float wallHeight = 2f;
-            float wallThickness = 0.5f;
-            
-            CreateWall(parent, new Vector3(0, wallHeight/2, stageLength/2), new Vector3(stageWidth, wallHeight, wallThickness));
-            CreateWall(parent, new Vector3(0, wallHeight/2, -stageLength/2), new Vector3(stageWidth, wallHeight, wallThickness));
-            CreateWall(parent, new Vector3(stageWidth/2, wallHeight/2, 0), new Vector3(wallThickness, wallHeight, stageLength));
-            CreateWall(parent, new Vector3(-stageWidth/2, wallHeight/2, 0), new Vector3(wallThickness, wallHeight, stageLength));
-        }
 
-        private void CreateWall(GameObject parent, Vector3 position, Vector3 scale)
+        private void CreateGround(GameObject parent)
         {
-            GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            wall.name = "Wall";
-            wall.transform.SetParent(parent.transform);
-            wall.transform.localPosition = position;
-            wall.transform.localScale = scale;
+            GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            ground.name = "Ground";
+            ground.transform.SetParent(parent.transform);
+            float maxRadius = zoneSettings != null ? zoneSettings.zones[zoneSettings.zones.Length - 1].radius : 10f;
+            ground.transform.localScale = new Vector3(maxRadius * 2, 0.1f, maxRadius * 2);
+            ground.transform.position = Vector3.zero;
             
             if (stageMaterial != null)
             {
-                wall.GetComponent<MeshRenderer>().material = stageMaterial;
-            }
-        }
-        
-        private void PlaceDestructibleObjects(GameObject parent)
-        {
-            float minX = -stageWidth/2 + 3;
-            float maxX = stageWidth/2 - 3;
-            float minZ = -stageLength/2 + playerAreaClearance;
-            float maxZ = stageLength/2 - 3;
-            
-            // ステージの奥行きを3つの領域に分割
-            float zoneDepth = (maxZ - minZ) / 3f;
-            float zone1MaxZ = minZ + zoneDepth;
-            float zone2MaxZ = zone1MaxZ + zoneDepth;
-            
-            List<Vector3> usedPositions = new List<Vector3>();
-            float minDestructibleDistance = 4f;
-            
-            GameObject destructiblesContainer = new GameObject("DestructibleObjects");
-            destructiblesContainer.transform.SetParent(parent.transform);
-            
-            for (int i = 0; i < destructibleCount; i++)
-            {
-                Vector3 position = Vector3.zero;
-                bool validPosition = false;
-                int attempts = 0;
-                
-                // オブジェクトの段階を決定
-                int level;
-                float z;
-                
-                while (!validPosition && attempts < 50)
-                {
-                    // Z位置に基づいて段階を決定
-                    z = Random.Range(minZ, maxZ);
-                    if (z <= zone1MaxZ)
-                    {
-                        level = 1;
-                    }
-                    else if (z <= zone2MaxZ)
-                    {
-                        level = 2;
-                    }
-                    else
-                    {
-                        level = 3;
-                    }
-                    
-                    position = new Vector3(
-                        Random.Range(minX, maxX),
-                        1f,
-                        z
-                    );
-                    
-                    validPosition = true;
-                    foreach (Vector3 usedPos in usedPositions)
-                    {
-                        if (Vector3.Distance(position, usedPos) < minDestructibleDistance)
-                        {
-                            validPosition = false;
-                            break;
-                        }
-                    }
-                    attempts++;
-                }
-                
-                if (validPosition)
-                {
-                    GameObject destructible = null;
-                    List<GameObject> prefabList = GetPrefabListForLevel(position.z, zone1MaxZ, zone2MaxZ, maxZ);
-                    
-                    if (prefabList != null && prefabList.Count > 0)
-                    {
-                        // ランダムにプレファブを選択
-                        GameObject selectedPrefab = prefabList[Random.Range(0, prefabList.Count)];
-                        destructible = PrefabUtility.InstantiatePrefab(selectedPrefab, destructiblesContainer.transform) as GameObject;
-                    }
-                    else
-                    {
-                        destructible = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                        destructible.transform.SetParent(destructiblesContainer.transform);
-                    }
-                    
-                    if (destructible != null)
-                    {
-                        destructible.name = $"Destructible_Level{GetLevelForPosition(position.z, zone1MaxZ, zone2MaxZ, maxZ)}_{i}";
-                        destructible.transform.localPosition = position;
-                        destructible.transform.localRotation = Quaternion.Euler(0, Random.Range(0, 360), 0);
-                        
-                        if (autoAddComponents)
-                        {
-                            DestructibleObject destructibleComp = destructible.GetComponent<DestructibleObject>();
-                            if (destructibleComp == null)
-                            {
-                                destructibleComp = destructible.AddComponent<DestructibleObject>();
-                            }
-                            
-                            // レベルに応じた設定
-                            var levelField = typeof(DestructibleObject).GetField("requiredLevel", 
-                                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-                            if (levelField != null)
-                            {
-                                int objLevel = GetLevelForPosition(position.z, zone1MaxZ, zone2MaxZ, maxZ);
-                                levelField.SetValue(destructibleComp, objLevel);
-                                
-                                // レベルに応じて耐久力を設定
-                                var hpField = typeof(DestructibleObject).GetField("maxHitPoints",
-                                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-                                if (hpField != null)
-                                {
-                                    float hp = objLevel * 100f; // レベルに応じて耐久力を増加
-                                    hpField.SetValue(destructibleComp, hp);
-                                }
-                            }
-                            
-                            DestructibleObjectView destructibleView = destructible.GetComponent<DestructibleObjectView>();
-                            if (destructibleView == null)
-                            {
-                                destructibleView = destructible.AddComponent<DestructibleObjectView>();
-                            }
-                            destructibleView.Initialize(destructibleComp);
-                        }
-                        
-                        usedPositions.Add(position);
-                    }
-                }
-            }
-        }
-        
-        private List<GameObject> GetPrefabListForLevel(float z, float zone1MaxZ, float zone2MaxZ, float maxZ)
-        {
-            int level = GetLevelForPosition(z, zone1MaxZ, zone2MaxZ, maxZ);
-            switch (level)
-            {
-                case 1:
-                    return level1Prefabs;
-                case 2:
-                    return level2Prefabs;
-                case 3:
-                    return level3Prefabs;
-                default:
-                    return level1Prefabs;
+                ground.GetComponent<MeshRenderer>().material = stageMaterial;
             }
         }
 
-        private int GetLevelForPosition(float z, float zone1MaxZ, float zone2MaxZ, float maxZ)
+        private void CreateZones(GameObject parent)
         {
-            if (z <= zone1MaxZ)
+            if (zoneSettings == null)
             {
-                return 1;
+                Debug.LogError("Zone Settings is not assigned!");
+                return;
             }
-            else if (z <= zone2MaxZ)
+
+            for (int i = 0; i < zoneSettings.zones.Length; i++)
             {
-                return 2;
-            }
-            else
-            {
-                return 3;
+                var zoneData = zoneSettings.zones[i];
+                if (zoneData == null) continue;
+
+                GameObject zone = new GameObject($"Zone_{i + 1}");
+                zone.transform.SetParent(parent.transform);
+                
+                // ZoneControllerの追加と設定
+                ZoneController zoneController = zone.AddComponent<ZoneController>();
+                zoneController.ZoneLevel = i + 1;
+                zoneController.RequiredPlayerLevel = zoneData.requiredLevel;
+                zoneController.Radius = zoneData.radius;
+                
+                // コライダーの設定
+                SphereCollider zoneCollider = zone.AddComponent<SphereCollider>();
+                zoneCollider.radius = zoneData.radius;
+                zoneCollider.isTrigger = true;
+                
+                // ゾーン壁の作成
+                if (zoneData.wallHeight > 0)
+                {
+                    CreateZoneWall(zone, i, zoneData);
+                }
+                
+                // 破壊可能オブジェクトの配置
+                CreateZoneDestructibles(zone, i);
+                
+                // フォグエフェクトの作成
+                if (zoneData.enableFog && zoneSettings.defaultFogMaterial != null)
+                {
+                    CreateZoneFog(zone, i, zoneData);
+                }
             }
         }
 
-        private void DrawPrefabList(List<GameObject> prefabList)
+        private void CreateZoneWall(GameObject zone, int zoneIndex, ZoneSettings.ZoneData zoneData)
         {
-            EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("Add Prefab", GUILayout.Width(100)))
-            {
-                prefabList.Add(null);
-            }
-            if (GUILayout.Button("Clear All", GUILayout.Width(100)))
-            {
-                if (EditorUtility.DisplayDialog("Clear Prefabs", 
-                    "Are you sure you want to clear all prefabs from this list?", 
-                    "Yes", "No"))
-                {
-                    prefabList.Clear();
-                }
-            }
-            EditorGUILayout.EndHorizontal();
+            GameObject wallContainer = new GameObject("ZoneWall");
+            wallContainer.transform.SetParent(zone.transform);
             
-            EditorGUI.indentLevel++;
+            // ZoneWallコンポーネントを追加
+            ZoneWall zoneWall = wallContainer.AddComponent<ZoneWall>();
+            zoneWall.RequiredLevel = zoneData.requiredLevel;
+
+            // 6角形の壁を作成
+            int segments = 6;
+            float radius = zoneData.radius;
+            float angleStep = 360f / segments;
             
-            for (int i = 0; i < prefabList.Count; i++)
+            for (int i = 0; i < segments; i++)
             {
-                EditorGUILayout.BeginHorizontal();
+                float currentAngle = i * angleStep;
+                float nextAngle = (i + 1) * angleStep;
                 
-                prefabList[i] = (GameObject)EditorGUILayout.ObjectField(
-                    $"Prefab {i + 1}", 
-                    prefabList[i], 
-                    typeof(GameObject), 
-                    false
+                // 現在の角度と次の角度の中間点を計算
+                float midAngle = (currentAngle + nextAngle) / 2f;
+                
+                // 現在の点と次の点の座標を計算
+                Vector3 currentPoint = new Vector3(
+                    Mathf.Cos(currentAngle * Mathf.Deg2Rad) * radius,
+                    0,
+                    Mathf.Sin(currentAngle * Mathf.Deg2Rad) * radius
                 );
                 
-                if (GUILayout.Button("Remove", GUILayout.Width(60)))
+                Vector3 nextPoint = new Vector3(
+                    Mathf.Cos(nextAngle * Mathf.Deg2Rad) * radius,
+                    0,
+                    Mathf.Sin(nextAngle * Mathf.Deg2Rad) * radius
+                );
+                
+                // 2点間の距離を計算
+                float wallLength = Vector3.Distance(currentPoint, nextPoint);
+                
+                // 壁の中心位置
+                Vector3 wallCenter = new Vector3(
+                    Mathf.Cos(midAngle * Mathf.Deg2Rad) * radius,
+                    zoneData.wallHeight / 2,
+                    Mathf.Sin(midAngle * Mathf.Deg2Rad) * radius
+                );
+                
+                // 壁セグメントを作成
+                GameObject wallSegment = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                wallSegment.name = $"WallSegment_{i}";
+                wallSegment.transform.SetParent(wallContainer.transform);
+                wallSegment.transform.position = wallCenter;
+                
+                // 壁の向きを調整
+                wallSegment.transform.LookAt(new Vector3(0, wallSegment.transform.position.y, 0));
+                wallSegment.transform.Rotate(0, 90, 0); // 壁の面が内側を向くように調整
+                
+                // 壁のサイズを設定
+                wallSegment.transform.localScale = new Vector3(
+                    zoneData.wallThickness,
+                    zoneData.wallHeight,
+                    wallLength
+                );
+
+                // MeshColliderに変換してConvex設定
+                DestroyImmediate(wallSegment.GetComponent<BoxCollider>());
+                MeshCollider meshCollider = wallSegment.AddComponent<MeshCollider>();
+                meshCollider.convex = true;
+                meshCollider.isTrigger = false;
+
+                // マテリアルの設定
+                if (zoneSettings.defaultWallMaterial != null)
                 {
-                    prefabList.RemoveAt(i);
-                    i--;
-                    continue;
+                    wallSegment.GetComponent<MeshRenderer>().material = zoneSettings.defaultWallMaterial;
+                }
+            }
+        }
+
+        private void CreateZoneFog(GameObject zone, int zoneIndex, ZoneSettings.ZoneData zoneData)
+        {
+            if (!zoneData.enableFog || zoneSettings.defaultFogMaterial == null) return;
+
+            GameObject fog = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            fog.name = "ZoneFog";
+            fog.transform.SetParent(zone.transform);
+            
+            fog.transform.localScale = new Vector3(
+                zoneData.radius * 2,
+                zoneData.fogHeight,
+                zoneData.radius * 2
+            );
+            fog.transform.position = new Vector3(0, zoneData.fogHeight / 2, 0);
+            
+            Material fogMaterialInstance = new Material(zoneSettings.defaultFogMaterial);
+            fogMaterialInstance.color = zoneData.fogColor;
+            fog.GetComponent<MeshRenderer>().material = fogMaterialInstance;
+        }
+
+        private void CreateZoneDestructibles(GameObject zone, int zoneIndex)
+        {
+            GameObject destructiblesContainer = new GameObject("Destructibles");
+            destructiblesContainer.transform.SetParent(zone.transform);
+            
+            float innerRadius = zoneIndex > 0 ? zoneSettings.zones[zoneIndex-1].radius : 0;
+            float outerRadius = zoneSettings.zones[zoneIndex].radius;
+            
+            // ゾーンの面積に応じてオブジェクト数を調整
+            float zoneArea = Mathf.PI * (outerRadius * outerRadius - innerRadius * innerRadius);
+            int objectCount = Mathf.RoundToInt(zoneArea * 0.05f); // 密度調整
+            
+            List<GameObject> prefabList = zoneSettings.zones[zoneIndex].destructiblePrefabs;
+            if (prefabList == null || prefabList.Count == 0)
+            {
+                Debug.LogWarning($"Zone {zoneIndex + 1} has no prefabs assigned!");
+                return;
+            }
+            
+            PlaceZoneDestructibles(destructiblesContainer, innerRadius, outerRadius, objectCount, zoneIndex + 1, prefabList);
+        }
+
+        private void PlaceZoneDestructibles(GameObject container, float innerRadius, float outerRadius, 
+            int count, int zoneLevel, List<GameObject> prefabList)
+        {
+            float minDistance = 3f;
+            List<Vector3> placedPositions = new List<Vector3>();
+            
+            for (int i = 0; i < count; i++)
+            {
+                Vector3 position = GetValidPositionInZone(innerRadius, outerRadius, minDistance, placedPositions);
+                if (position != Vector3.zero)
+                {
+                    GameObject destructible = CreateDestructibleObject(position, container, prefabList, i, zoneLevel);
+                    if (destructible != null)
+                    {
+                        placedPositions.Add(position);
+                    }
+                }
+            }
+        }
+
+        private Vector3 GetValidPositionInZone(float innerRadius, float outerRadius, float minDistance, List<Vector3> placedPositions)
+        {
+            int maxAttempts = 50;
+            int attempts = 0;
+            
+            while (attempts < maxAttempts)
+            {
+                float angle = Random.Range(0f, Mathf.PI * 2f);
+                float radius = Mathf.Sqrt(Random.Range(innerRadius * innerRadius, outerRadius * outerRadius));
+                
+                Vector3 position = new Vector3(
+                    Mathf.Cos(angle) * radius,
+                    1f,
+                    Mathf.Sin(angle) * radius
+                );
+                
+                bool isValid = true;
+                foreach (Vector3 placedPos in placedPositions)
+                {
+                    if (Vector3.Distance(position, placedPos) < minDistance)
+                    {
+                        isValid = false;
+                        break;
+                    }
                 }
                 
-                EditorGUILayout.EndHorizontal();
+                if (isValid)
+                {
+                    return position;
+                }
+                
+                attempts++;
             }
             
-            EditorGUI.indentLevel--;
+            return Vector3.zero;
         }
 
-        private void SavePrefabSettings()
+        private GameObject CreateDestructibleObject(Vector3 position, GameObject parent, List<GameObject> prefabList, int index, int zoneLevel)
         {
-            string settings = JsonUtility.ToJson(new PrefabSettings
-            {
-                level1Prefabs = level1Prefabs,
-                level2Prefabs = level2Prefabs,
-                level3Prefabs = level3Prefabs
-            });
+            GameObject selectedPrefab = prefabList[Random.Range(0, prefabList.Count)];
+            GameObject destructible = PrefabUtility.InstantiatePrefab(selectedPrefab, parent.transform) as GameObject;
             
-            EditorPrefs.SetString("StageCreator_PrefabSettings", settings);
+            if (destructible != null)
+            {
+                destructible.name = $"Destructible_Zone{zoneLevel}_{index}";
+                destructible.transform.position = position;
+                destructible.transform.rotation = Quaternion.Euler(0, Random.Range(0, 360), 0);
+                
+                SetupDestructibleComponents(destructible, zoneLevel);
+            }
+            
+            return destructible;
         }
 
-        private void LoadPrefabSettings()
+        private void SetupDestructibleComponents(GameObject destructible, int zoneLevel)
         {
-            string settings = EditorPrefs.GetString("StageCreator_PrefabSettings", "");
-            if (!string.IsNullOrEmpty(settings))
+            DestructibleObject destructibleComp = destructible.GetComponent<DestructibleObject>();
+            if (destructibleComp == null)
             {
-                PrefabSettings prefabSettings = JsonUtility.FromJson<PrefabSettings>(settings);
-                if (prefabSettings != null)
+                destructibleComp = destructible.AddComponent<DestructibleObject>();
+            }
+            
+            // レベルと耐久力の設定
+            var levelField = typeof(DestructibleObject).GetField("requiredLevel", 
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            if (levelField != null)
+            {
+                levelField.SetValue(destructibleComp, zoneLevel);
+                
+                var hpField = typeof(DestructibleObject).GetField("maxHitPoints",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                if (hpField != null)
                 {
-                    level1Prefabs = prefabSettings.level1Prefabs ?? new List<GameObject>();
-                    level2Prefabs = prefabSettings.level2Prefabs ?? new List<GameObject>();
-                    level3Prefabs = prefabSettings.level3Prefabs ?? new List<GameObject>();
+                    float hp = zoneLevel * 100f;
+                    hpField.SetValue(destructibleComp, hp);
                 }
             }
+            
+            // ViewComponentの設定
+            DestructibleObjectView destructibleView = destructible.GetComponent<DestructibleObjectView>();
+            if (destructibleView == null)
+            {
+                destructibleView = destructible.AddComponent<DestructibleObjectView>();
+            }
+            destructibleView.Initialize(destructibleComp);
         }
-    }
-
-    [System.Serializable]
-    public class PrefabSettings
-    {
-        public List<GameObject> level1Prefabs;
-        public List<GameObject> level2Prefabs;
-        public List<GameObject> level3Prefabs;
     }
 }
