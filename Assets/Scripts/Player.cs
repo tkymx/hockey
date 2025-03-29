@@ -179,4 +179,24 @@ public class Player : MonoBehaviour
             rb.mass = mass;
         }
     }
+
+    // レベルと成長段階をリセットする
+    public void ResetGrowth()
+    {
+        // レベルを1にリセット
+        if (level != 1)
+        {
+            level = 1;
+            OnLevelChanged?.Invoke(level);
+        }
+        
+        // 経験値をリセット
+        experiencePoints = 0;
+        
+        // 成長段階を1にリセット
+        if (growthStage != 1)
+        {
+            UpdateGrowthStage(1);
+        }
+    }
 }

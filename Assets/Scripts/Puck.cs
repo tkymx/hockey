@@ -197,4 +197,14 @@ public class Puck : MonoBehaviour
             sphereCollider.radius = transform.localScale.x / 2;
         }
     }
+
+    // 成長段階をリセットするメソッド
+    public void ResetGrowth()
+    {
+        // 成長段階を1にリセット
+        if (growthStage != 1)
+        {
+            UpdateGrowthStage(1);
+        }
+    }
 }

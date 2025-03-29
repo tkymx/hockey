@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.SceneManagement; // SceneManagementの参照を追加
 
 public class GameManager : MonoBehaviour
 {
@@ -74,8 +75,25 @@ public class GameManager : MonoBehaviour
         // 破壊可能オブジェクトを収集
         CollectDestructibleObjects();
         
-        // ステージとパックのリセット
-        ResetStage();
+        // パックの初期化
+        InitializePuck();
+        
+        // プレイヤーを初期位置にリセット
+        if (playerManager != null)
+        {
+            playerManager.ResetPlayer();
+        }
+        
+        // プレイヤーのレベル変更イベントを再購読（UI更新用）
+        Player player = playerManager.GetPlayer();
+        if (player != null)
+        {
+            // 既存の購読を解除してから再購読
+            player.OnLevelChanged -= HandlePlayerLevelChanged;
+            player.OnLevelChanged += HandlePlayerLevelChanged;
+            // 現在のレベルでUIを更新
+            gameHUDView.UpdateLevel(player.Level);
+        }
         
         isGameActive = true;
         gameOverMenuView.Hide();
@@ -175,35 +193,10 @@ public class GameManager : MonoBehaviour
     
     private void RestartGame()
     {
-        // ステージをリセット
-        ResetStage();
-        // ゲームを開始
-        StartGame();
+        // シーンを再ロードしてゲームをリセットする
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
-    
-    // ステージをリセット
-    public void ResetStage()
-    {
-        // パックをリセット
-        if (puckController != null && puckSpawnPoint != null)
-        {
-            puckController.ResetPuck(puckSpawnPoint.position);
-        }
-        else if (puckController != null)
-        {
-            puckController.ResetPuck(new Vector3(0, 0.5f, 0));
-        }
-        
-        // プレイヤーを初期位置にリセット
-        if (playerManager != null)
-        {
-            playerManager.ResetPlayer();
-        }
-        
-        // 破壊されたオブジェクトを再度収集
-        CollectDestructibleObjects();
-    }
-    
+
     // ゲームの一時停止/再開
     public void SetGameActive(bool active)
     {
