@@ -5,8 +5,12 @@ public class CameraController : MonoBehaviour
     [Header("Camera Settings")]
     [SerializeField] private float cameraAngle = 45f; // カメラの見下ろし角度（デフォルト45度）
     [SerializeField] private float zOffset = 0f; // ステージに対するZ方向のオフセット（+で後ろ側、-で前側）
+    [SerializeField] private float moveDuration = 0.5f; // カメラ移動時間
+    [SerializeField] private LeanTweenType easeType = LeanTweenType.easeInOutQuad; // イージングタイプ
     
     private Camera _camera;
+    private Vector3 _targetPosition;
+    private bool _isMoving = false;
     
     private void Awake()
     {
@@ -46,11 +50,22 @@ public class CameraController : MonoBehaviour
         float cameraHeight = distance * Mathf.Sin(cameraAngleRad);
         float cameraZOffset = distance * Mathf.Cos(cameraAngleRad);
         
-        // カメラ位置の設定
-        transform.position = new Vector3(
+        // 目標位置を計算
+        Vector3 newPosition = new Vector3(
             stageCenter.x,
             cameraHeight,
             stageCenter.z - cameraZOffset + zOffset
         );
+
+        // 現在の位置と目標位置が十分に離れている場合のみアニメーションを実行
+        if (Vector3.Distance(transform.position, newPosition) > 0.01f)
+        {
+            // 既存のトゥイーンをキャンセル
+            LeanTween.cancel(gameObject);
+            
+            // 新しい位置へスムーズに移動
+            LeanTween.move(gameObject, newPosition, moveDuration)
+                .setEase(easeType);
+        }
     }
 }

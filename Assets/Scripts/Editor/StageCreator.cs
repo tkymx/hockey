@@ -312,10 +312,7 @@ namespace HockeyEditor
                 float currentAngle = i * angleStep;
                 float nextAngle = (i + 1) * angleStep;
 
-                // 現在の角度と次の角度の中間点を計算
-                float midAngle = (currentAngle + nextAngle) / 2f;
-
-                // 現在の点と次の点の座標を計算
+                // 正確な頂点位置を計算
                 Vector3 currentPoint = new Vector3(
                     Mathf.Cos(currentAngle * Mathf.Deg2Rad) * radius,
                     0,
@@ -328,15 +325,12 @@ namespace HockeyEditor
                     Mathf.Sin(nextAngle * Mathf.Deg2Rad) * radius
                 );
 
-                // 2点間の距離を計算
-                float wallLength = Vector3.Distance(currentPoint, nextPoint);
+                // 壁の中心位置（2点の中間）
+                Vector3 wallCenter = (currentPoint + nextPoint) * 0.5f;
+                wallCenter.y = zoneData.wallHeight / 2;
 
-                // 壁の中心位置
-                Vector3 wallCenter = new Vector3(
-                    Mathf.Cos(midAngle * Mathf.Deg2Rad) * radius,
-                    zoneData.wallHeight / 2,
-                    Mathf.Sin(midAngle * Mathf.Deg2Rad) * radius
-                );
+                // 2点間の正確な距離
+                float wallLength = Vector3.Distance(currentPoint, nextPoint);
 
                 // 壁セグメントを作成
                 GameObject wallSegment = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -344,11 +338,11 @@ namespace HockeyEditor
                 wallSegment.transform.SetParent(wallContainer.transform);
                 wallSegment.transform.position = wallCenter;
 
-                // 壁の向きを調整
-                wallSegment.transform.LookAt(new Vector3(0, wallSegment.transform.position.y, 0));
-                wallSegment.transform.Rotate(0, 90, 0); // 壁の面が内側を向くように調整
+                // 壁の向きを正確に調整（2点を結ぶ方向に）
+                Vector3 direction = (nextPoint - currentPoint).normalized;
+                wallSegment.transform.rotation = Quaternion.LookRotation(direction);
 
-                // 壁のサイズを設定
+                // 壁のサイズを設定（長さは頂点間の正確な距離）
                 wallSegment.transform.localScale = new Vector3(
                     zoneData.wallThickness,
                     zoneData.wallHeight,

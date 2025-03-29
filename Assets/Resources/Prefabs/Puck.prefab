@@ -189,23 +189,30 @@ MonoBehaviour:
   minVelocityThreshold: 0.05
   maxSpeed: 20
   growthStage: 1
-  maxGrowthStage: 3
+  maxGrowthStage: 5
   stageScales:
   - 0.5
   - 1
   - 2
+  - 3
+  - 4
   stageMass:
   - 0.5
   - 1
   - 2
+  - 3
+  - 4
   stageMaxSpeed:
   - 5
   - 15
   - 25
+  - 50
+  - 75
   stageFriction:
   - 0.993
   - 0.995
   - 0.997
+  - 0.999
 --- !u!114 &1599307697745337965
 MonoBehaviour:
   m_ObjectHideFlags: 0

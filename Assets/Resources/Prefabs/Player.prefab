@@ -211,4 +211,24 @@ MonoBehaviour:
   collisionForceMultiplier: 2.5
   level: 1
   experiencePoints: 0
-  experienceThresholds: 00000000f4010000e8030000dc050000d0070000
+  experienceThresholds: 00000000e8030000a00f000070170000401f000010270000
+  growthStage: 1
+  maxGrowthStage: 5
+  stageScales:
+  - 0.8
+  - 1
+  - 1.2
+  - 2
+  - 3
+  stageMass:
+  - 1.5
+  - 2
+  - 2.5
+  - 5
+  - 7.5
+  stageCollisionForce:
+  - 2
+  - 2.5
+  - 3
+  - 4
+  - 5

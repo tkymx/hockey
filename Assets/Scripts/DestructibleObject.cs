@@ -63,8 +63,8 @@ public class DestructibleObject : MonoBehaviour
         if (player != null && player.GetBreakableObjectLevel() >= requiredLevel)
         {
             Destroy();
-            // 経験値として破壊難易度 * 基本ポイントを付与
-            bool didLevelUp = player.GainExperience(pointValue * requiredLevel);
+            // 経験値を付与
+            bool didLevelUp = player.GainExperience(pointValue);
             if (didLevelUp)
             {
                 // レベルアップ時の処理（エフェクトなど）

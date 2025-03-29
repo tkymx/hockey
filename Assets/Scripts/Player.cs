@@ -8,8 +8,6 @@ public class Player : MonoBehaviour
     [SerializeField] private float collisionForceMultiplier = 2.5f;
 
     [Header("Player Stats")]
-    [SerializeField] private int level = 1;
-    [SerializeField] private int experiencePoints = 0;
     [SerializeField] private int[] experienceThresholds = { 0, 100, 300, 600, 1000 }; // レベルアップに必要な経験値
 
     [Header("Growth Settings")]
@@ -18,6 +16,9 @@ public class Player : MonoBehaviour
     [SerializeField] private float[] stageScales = { 0.8f, 1.0f, 1.2f };
     [SerializeField] private float[] stageMass = { 1.5f, 2.0f, 2.5f };
     [SerializeField] private float[] stageCollisionForce = { 2.0f, 2.5f, 3.0f };
+
+    private int level = 1;
+    int experiencePoints = 0;
 
     public int Level => level;
     public int GrowthStage => growthStage;
@@ -40,14 +41,14 @@ public class Player : MonoBehaviour
         {
             rb = gameObject.AddComponent<Rigidbody>();
         }
-        
+
         meshRenderer = GetComponentInChildren<MeshRenderer>();
         playerCollider = GetComponent<Collider>();
         mainCamera = Camera.main;
 
         // 初期状態では非表示かつ当たり判定無効
         SetActiveState(false);
-        
+
         // 物理設定
         rb.mass = mass;
         rb.useGravity = false;
@@ -88,7 +89,7 @@ public class Player : MonoBehaviour
         Vector3 oldPosition = transform.position;
         position.y = transform.position.y;
         transform.position = position;
-        
+
         // 位置が変更された場合の速度を計算
         currentVelocity = (position - oldPosition) / Time.deltaTime;
         previousPosition = position;
@@ -105,7 +106,7 @@ public class Player : MonoBehaviour
         Vector3 oldPosition = transform.position;
         position.y = transform.position.y;
         transform.position = position;
-        
+
         // 移動による速度を計算
         currentVelocity = (position - oldPosition) / Time.deltaTime;
         previousPosition = position;
@@ -120,7 +121,7 @@ public class Player : MonoBehaviour
         {
             // 現在の速度から衝突力を計算
             Vector3 collisionForce = currentVelocity * collisionForceMultiplier * mass;
-            
+
             // パックに力を適用
             puck.ApplyForce(collisionForce);
         }
@@ -166,14 +167,14 @@ public class Player : MonoBehaviour
     private void ApplyGrowthStageSettings(int stage)
     {
         int index = Mathf.Clamp(stage - 1, 0, stageScales.Length - 1);
-        
+
         // スケールの更新
         transform.localScale = new Vector3(stageScales[index], stageScales[index], stageScales[index]);
-        
+
         // 物理パラメータの更新
         mass = stageMass[index];
         collisionForceMultiplier = stageCollisionForce[index];
-        
+
         if (rb != null)
         {
             rb.mass = mass;
@@ -189,10 +190,10 @@ public class Player : MonoBehaviour
             level = 1;
             OnLevelChanged?.Invoke(level);
         }
-        
+
         // 経験値をリセット
         experiencePoints = 0;
-        
+
         // 成長段階を1にリセット
         if (growthStage != 1)
         {

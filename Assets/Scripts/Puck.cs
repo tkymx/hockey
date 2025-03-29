@@ -8,7 +8,6 @@ public class Puck : MonoBehaviour
     [SerializeField] private float frictionCoefficient = 0.995f; // 摩擦をほぼなしに調整（0.95→0.995）
     [SerializeField] private float airResistance = 0.998f; // 空気抵抗の追加
     [SerializeField] private float minVelocityThreshold = 0.05f; // これ以下の速度で停止と見なす
-    [SerializeField] private float maxSpeed = 20.0f;
 
     [Header("Growth Settings")]
     [SerializeField] private int growthStage = 1;
@@ -16,13 +15,13 @@ public class Puck : MonoBehaviour
     [SerializeField] private float[] stageScales = { 0.8f, 1.0f, 1.2f };
     [SerializeField] private float[] stageMass = { 0.8f, 1.0f, 1.3f };
     [SerializeField] private float[] stageMaxSpeed = { 15.0f, 20.0f, 25.0f };
+    [SerializeField] private float[] stageMaxForce = { 12.0f, 16.0f, 20.0f }; // 各成長段階での最大外力
     [SerializeField] private float[] stageFriction = { 0.993f, 0.995f, 0.997f }; // 全ての段階で摩擦を小さく設定
 
     public int GrowthStage => growthStage;
-    
+
     public event Action<int> OnGrowthStageChanged;
 
-    private Vector3 velocity = Vector3.zero;
     private bool isMoving = false;
     private Rigidbody rb;
     private SphereCollider sphereCollider;
@@ -31,6 +30,9 @@ public class Puck : MonoBehaviour
 
     public Rigidbody Rigidbody => rb;
 
+    private Func<float> maxSpeed = null;
+    private Func<float> maxForce = null;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -38,7 +40,7 @@ public class Puck : MonoBehaviour
         {
             rb = gameObject.AddComponent<Rigidbody>();
         }
-        
+
         sphereCollider = GetComponent<SphereCollider>();
         if (sphereCollider == null)
         {
@@ -46,7 +48,7 @@ public class Puck : MonoBehaviour
         }
 
         puckView = GetComponent<PuckView>();
-        
+
         // パックの物理設定
         rb.mass = mass;
         rb.linearDamping = 0; // ダンピングはなし
@@ -55,7 +57,7 @@ public class Puck : MonoBehaviour
         rb.isKinematic = false;
         rb.constraints = RigidbodyConstraints.FreezePositionY | RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous; // 高速移動時の衝突検出を改善
-        
+
         // 当たり判定の設定
         sphereCollider.radius = transform.localScale.x / 2;
         PhysicsMaterial puckMaterial = new PhysicsMaterial
@@ -71,7 +73,7 @@ public class Puck : MonoBehaviour
         // 成長段階の初期設定を適用
         ApplyGrowthStageSettings(growthStage);
     }
-    
+
     private void FixedUpdate()
     {
         // 現在の速度をチェックして空気抵抗と微小な摩擦を適用
@@ -89,25 +91,26 @@ public class Puck : MonoBehaviour
             }
         }
     }
-    
+
     public void ApplyForce(Vector3 force, Player player = null)
     {
         if (player != null)
         {
             lastHitPlayer = player;
         }
-        
-        rb.AddForce(new Vector3(force.x, 0, force.z), ForceMode.Impulse);
-        
-        // 最大速度を制限
-        if (rb.linearVelocity.magnitude > maxSpeed)
+
+        // 外力の大きさを制限
+        float forceMagnitude = force.magnitude;
+        if (forceMagnitude > maxForce?.Invoke())
         {
-            rb.linearVelocity = rb.linearVelocity.normalized * maxSpeed;
+            force = force.normalized * (maxForce?.Invoke() ?? 0);
         }
-        
+
+        rb.AddForce(new Vector3(force.x, 0, force.z), ForceMode.Impulse);
+
         isMoving = true;
     }
-    
+
     private void ApplyFriction()
     {
         // エアホッケーでは、摩擦はほとんどなく、主に空気抵抗で徐々に減速
@@ -115,35 +118,41 @@ public class Puck : MonoBehaviour
 
         // 非常に小さな摩擦
         rb.linearVelocity *= frictionCoefficient;
+
+        // 最大速度を制限
+        if (rb.linearVelocity.magnitude > maxSpeed?.Invoke())
+        {
+            rb.linearVelocity = rb.linearVelocity.normalized * (maxSpeed?.Invoke() ?? 0);
+        }
     }
-    
+
     public Vector3 GetPosition()
     {
         return transform.position;
     }
-    
+
     public Vector3 GetVelocity()
     {
         return rb.linearVelocity;
     }
-    
+
     public bool IsMoving()
     {
         return isMoving;
     }
-    
+
     public void ResetPosition(Vector3 position)
     {
         transform.position = position;
         rb.linearVelocity = Vector3.zero;
         isMoving = false;
     }
-    
+
     public Player GetLastHitPlayer()
     {
         return lastHitPlayer;
     }
-    
+
     private void OnCollisionEnter(Collision collision)
     {
         Player player = collision.gameObject.GetComponent<Player>();
@@ -178,21 +187,22 @@ public class Puck : MonoBehaviour
     private void ApplyGrowthStageSettings(int stage)
     {
         int index = Mathf.Clamp(stage - 1, 0, stageScales.Length - 1);
-        
+
         // スケールの更新
         float scale = stageScales[index];
         transform.localScale = new Vector3(scale, transform.localScale.y, scale);
-        
+
         // 物理パラメータの更新
         mass = stageMass[index];
-        maxSpeed = stageMaxSpeed[index];
+        maxSpeed = () => stageMaxSpeed[index];
+        maxForce = () => stageMaxForce[index]; // 最大外力も更新
         frictionCoefficient = stageFriction[index];
-        
+
         if (rb != null)
         {
             rb.mass = mass;
         }
-        
+
         // コライダーのサイズも更新
         if (sphereCollider != null)
         {
