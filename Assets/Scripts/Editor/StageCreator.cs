@@ -7,7 +7,7 @@ using System.IO;
 namespace HockeyEditor
 {
     using static HockeyPrefabManager;
-    
+
     [ExecuteInEditMode]
     public class StageCreator : EditorWindow
     {
@@ -15,7 +15,7 @@ namespace HockeyEditor
 
         [Header("Stage Settings")]
         private Material stageMaterial;
-        
+
         [SerializeField] private ZoneSettings zoneSettings;
         private bool showZoneSettings = false;
         private Vector2 zoneSettingsScroll;
@@ -40,18 +40,18 @@ namespace HockeyEditor
             }
 
             GUILayout.Label("Stage Creator", EditorStyles.boldLabel);
-            
+
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Basic Stage Settings", EditorStyles.boldLabel);
             stageMaterial = (Material)EditorGUILayout.ObjectField("Stage Material", stageMaterial, typeof(Material), false);
-            
-        
+
+
             EditorGUILayout.Space();
-            
+
             EditorGUILayout.LabelField("Level Prefabs", EditorStyles.boldLabel);
 
             EditorGUILayout.Space();
-            
+
             if (GUILayout.Button("Create Stage"))
             {
                 CreateStage();
@@ -71,16 +71,16 @@ namespace HockeyEditor
         private void DrawZoneSettings()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            
+
             // ZoneSettings ScriptableObjectの参照
             EditorGUI.BeginChangeCheck();
             zoneSettings = (ZoneSettings)EditorGUILayout.ObjectField(
-                "Zone Settings Asset", 
-                zoneSettings, 
-                typeof(ZoneSettings), 
+                "Zone Settings Asset",
+                zoneSettings,
+                typeof(ZoneSettings),
                 false
             );
-            
+
             if (zoneSettings == null)
             {
                 if (GUILayout.Button("Create New Zone Settings"))
@@ -91,7 +91,7 @@ namespace HockeyEditor
                         "asset",
                         "Choose where to save the Zone Settings asset"
                     );
-                    
+
                     if (!string.IsNullOrEmpty(path))
                     {
                         zoneSettings = CreateInstance<ZoneSettings>();
@@ -104,19 +104,19 @@ namespace HockeyEditor
             }
 
             EditorGUI.indentLevel++;
-            
+
             // 共通マテリアル設定
             zoneSettings.defaultWallMaterial = (Material)EditorGUILayout.ObjectField(
-                "Zone Wall Material", 
-                zoneSettings.defaultWallMaterial, 
-                typeof(Material), 
+                "Zone Wall Material",
+                zoneSettings.defaultWallMaterial,
+                typeof(Material),
                 false
             );
-            
+
             zoneSettings.defaultFogMaterial = (Material)EditorGUILayout.ObjectField(
-                "Zone Fog Material", 
-                zoneSettings.defaultFogMaterial, 
-                typeof(Material), 
+                "Zone Fog Material",
+                zoneSettings.defaultFogMaterial,
+                typeof(Material),
                 false
             );
 
@@ -124,7 +124,7 @@ namespace HockeyEditor
 
             // ゾーンごとの設定
             zoneSettingsScroll = EditorGUILayout.BeginScrollView(zoneSettingsScroll);
-            
+
             for (int i = 0; i < zoneSettings.zones.Length; i++)
             {
                 var zone = zoneSettings.zones[i];
@@ -137,18 +137,18 @@ namespace HockeyEditor
                 using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
                 {
                     EditorGUILayout.LabelField($"Zone {i + 1}", EditorStyles.boldLabel);
-                    
+
                     zone.radius = EditorGUILayout.FloatField("Radius", zone.radius);
                     zone.requiredLevel = EditorGUILayout.IntField("Required Level", zone.requiredLevel);
                     zone.fogColor = EditorGUILayout.ColorField("Zone Color", zone.fogColor);
-                    
+
                     using (new EditorGUILayout.HorizontalScope())
                     {
                         EditorGUILayout.LabelField("Wall Settings", EditorStyles.boldLabel, GUILayout.Width(100));
                         zone.wallHeight = EditorGUILayout.Slider("Height", zone.wallHeight, 0f, 10f);
                         zone.wallThickness = EditorGUILayout.Slider("Thickness", zone.wallThickness, 0.1f, 1f);
                     }
-                    
+
                     using (new EditorGUILayout.HorizontalScope())
                     {
                         EditorGUILayout.LabelField("Fog Settings", EditorStyles.boldLabel, GUILayout.Width(100));
@@ -160,21 +160,21 @@ namespace HockeyEditor
                     }
 
                     EditorGUILayout.Space(5);
-                    
+
                     // Destructible Prefabs Settings
                     EditorGUILayout.LabelField("Destructible Prefabs", EditorStyles.boldLabel);
-                    
+
                     if (zone.destructiblePrefabs == null)
                     {
                         zone.destructiblePrefabs = new List<GameObject>();
                     }
 
                     EditorGUI.indentLevel++;
-                    
+
                     // Prefab List
                     int prefabCount = zone.destructiblePrefabs.Count;
                     int newPrefabCount = EditorGUILayout.IntField("Prefab Count", prefabCount);
-                    
+
                     if (newPrefabCount != prefabCount)
                     {
                         while (zone.destructiblePrefabs.Count < newPrefabCount)
@@ -195,12 +195,12 @@ namespace HockeyEditor
 
                     EditorGUI.indentLevel--;
                 }
-                
+
                 EditorGUILayout.Space(5);
             }
-            
+
             EditorGUILayout.EndScrollView();
-            
+
             if (GUI.changed)
             {
                 EditorUtility.SetDirty(zoneSettings);
@@ -219,32 +219,35 @@ namespace HockeyEditor
             }
 
             GameObject stageObject = new GameObject("Stage");
-            
+
             // グラウンド（床）の作成
             CreateGround(stageObject);
-            
+
             // ゾーンの作成
             CreateZones(stageObject);
-            
+
             // プレハブを保存
             HockeyPrefabManager.EnsurePrefabDirectory();
             string completePath = HockeyPrefabManager.PrefabPath + "/Stage.prefab";
             PrefabUtility.SaveAsPrefabAsset(stageObject, completePath);
-            
+
             DestroyImmediate(stageObject);
-            
+
             EditorUtility.DisplayDialog("Success", "Stage prefab has been created!", "OK");
         }
 
         private void CreateGround(GameObject parent)
         {
-            GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
             ground.name = "Ground";
             ground.transform.SetParent(parent.transform);
+
             float maxRadius = zoneSettings != null ? zoneSettings.zones[zoneSettings.zones.Length - 1].radius : 10f;
-            ground.transform.localScale = new Vector3(maxRadius * 2, 0.1f, maxRadius * 2);
-            ground.transform.position = Vector3.zero;
-            
+            // Make the ground larger than the maximum zone radius
+            float groundSize = maxRadius * 2.5f;
+            ground.transform.localScale = new Vector3(groundSize, 0.1f, groundSize);
+            ground.transform.position = new Vector3(0, -0.05f, 0); // Position slightly below to avoid z-fighting
+
             if (stageMaterial != null)
             {
                 ground.GetComponent<MeshRenderer>().material = stageMaterial;
@@ -266,22 +269,22 @@ namespace HockeyEditor
 
                 GameObject zone = new GameObject($"Zone_{i + 1}");
                 zone.transform.SetParent(parent.transform);
-                
+
                 // ZoneControllerの追加と設定
                 ZoneController zoneController = zone.AddComponent<ZoneController>();
                 zoneController.ZoneLevel = i + 1;
                 zoneController.RequiredPlayerLevel = zoneData.requiredLevel;
                 zoneController.Radius = zoneData.radius;
-                                
+
                 // ゾーン壁の作成
                 if (zoneData.wallHeight > 0)
                 {
                     CreateZoneWall(zone, i, zoneData);
                 }
-                
+
                 // 破壊可能オブジェクトの配置
                 CreateZoneDestructibles(zone, i);
-                
+
                 // フォグエフェクトの作成
                 if (zoneData.enableFog && zoneSettings.defaultFogMaterial != null)
                 {
@@ -294,7 +297,7 @@ namespace HockeyEditor
         {
             GameObject wallContainer = new GameObject("ZoneWall");
             wallContainer.transform.SetParent(zone.transform);
-            
+
             // ZoneWallコンポーネントを追加
             ZoneWall zoneWall = wallContainer.AddComponent<ZoneWall>();
             zoneWall.RequiredLevel = zoneData.requiredLevel;
@@ -303,48 +306,48 @@ namespace HockeyEditor
             int segments = 6;
             float radius = zoneData.radius;
             float angleStep = 360f / segments;
-            
+
             for (int i = 0; i < segments; i++)
             {
                 float currentAngle = i * angleStep;
                 float nextAngle = (i + 1) * angleStep;
-                
+
                 // 現在の角度と次の角度の中間点を計算
                 float midAngle = (currentAngle + nextAngle) / 2f;
-                
+
                 // 現在の点と次の点の座標を計算
                 Vector3 currentPoint = new Vector3(
                     Mathf.Cos(currentAngle * Mathf.Deg2Rad) * radius,
                     0,
                     Mathf.Sin(currentAngle * Mathf.Deg2Rad) * radius
                 );
-                
+
                 Vector3 nextPoint = new Vector3(
                     Mathf.Cos(nextAngle * Mathf.Deg2Rad) * radius,
                     0,
                     Mathf.Sin(nextAngle * Mathf.Deg2Rad) * radius
                 );
-                
+
                 // 2点間の距離を計算
                 float wallLength = Vector3.Distance(currentPoint, nextPoint);
-                
+
                 // 壁の中心位置
                 Vector3 wallCenter = new Vector3(
                     Mathf.Cos(midAngle * Mathf.Deg2Rad) * radius,
                     zoneData.wallHeight / 2,
                     Mathf.Sin(midAngle * Mathf.Deg2Rad) * radius
                 );
-                
+
                 // 壁セグメントを作成
                 GameObject wallSegment = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 wallSegment.name = $"WallSegment_{i}";
                 wallSegment.transform.SetParent(wallContainer.transform);
                 wallSegment.transform.position = wallCenter;
-                
+
                 // 壁の向きを調整
                 wallSegment.transform.LookAt(new Vector3(0, wallSegment.transform.position.y, 0));
                 wallSegment.transform.Rotate(0, 90, 0); // 壁の面が内側を向くように調整
-                
+
                 // 壁のサイズを設定
                 wallSegment.transform.localScale = new Vector3(
                     zoneData.wallThickness,
@@ -373,14 +376,14 @@ namespace HockeyEditor
             GameObject fog = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             fog.name = "ZoneFog";
             fog.transform.SetParent(zone.transform);
-            
+
             fog.transform.localScale = new Vector3(
                 zoneData.radius * 2,
                 zoneData.fogHeight,
                 zoneData.radius * 2
             );
             fog.transform.position = new Vector3(0, zoneData.fogHeight / 2, 0);
-            
+
             Material fogMaterialInstance = new Material(zoneSettings.defaultFogMaterial);
             fogMaterialInstance.color = zoneData.fogColor;
             fog.GetComponent<MeshRenderer>().material = fogMaterialInstance;
@@ -390,30 +393,30 @@ namespace HockeyEditor
         {
             GameObject destructiblesContainer = new GameObject("Destructibles");
             destructiblesContainer.transform.SetParent(zone.transform);
-            
-            float innerRadius = zoneIndex > 0 ? zoneSettings.zones[zoneIndex-1].radius : 0;
+
+            float innerRadius = zoneIndex > 0 ? zoneSettings.zones[zoneIndex - 1].radius : 0;
             float outerRadius = zoneSettings.zones[zoneIndex].radius;
-            
+
             // ゾーンの面積に応じてオブジェクト数を調整
             float zoneArea = Mathf.PI * (outerRadius * outerRadius - innerRadius * innerRadius);
             int objectCount = Mathf.RoundToInt(zoneArea * 0.05f); // 密度調整
-            
+
             List<GameObject> prefabList = zoneSettings.zones[zoneIndex].destructiblePrefabs;
             if (prefabList == null || prefabList.Count == 0)
             {
                 Debug.LogWarning($"Zone {zoneIndex + 1} has no prefabs assigned!");
                 return;
             }
-            
+
             PlaceZoneDestructibles(destructiblesContainer, innerRadius, outerRadius, objectCount, zoneIndex + 1, prefabList);
         }
 
-        private void PlaceZoneDestructibles(GameObject container, float innerRadius, float outerRadius, 
+        private void PlaceZoneDestructibles(GameObject container, float innerRadius, float outerRadius,
             int count, int zoneLevel, List<GameObject> prefabList)
         {
             float minDistance = 3f;
             List<Vector3> placedPositions = new List<Vector3>();
-            
+
             for (int i = 0; i < count; i++)
             {
                 Vector3 position = GetValidPositionInZone(innerRadius, outerRadius, minDistance, placedPositions);
@@ -432,18 +435,18 @@ namespace HockeyEditor
         {
             int maxAttempts = 50;
             int attempts = 0;
-            
+
             while (attempts < maxAttempts)
             {
                 float angle = Random.Range(0f, Mathf.PI * 2f);
                 float radius = Mathf.Sqrt(Random.Range(innerRadius * innerRadius, outerRadius * outerRadius));
-                
+
                 Vector3 position = new Vector3(
                     Mathf.Cos(angle) * radius,
                     1f,
                     Mathf.Sin(angle) * radius
                 );
-                
+
                 bool isValid = true;
                 foreach (Vector3 placedPos in placedPositions)
                 {
@@ -453,15 +456,15 @@ namespace HockeyEditor
                         break;
                     }
                 }
-                
+
                 if (isValid)
                 {
                     return position;
                 }
-                
+
                 attempts++;
             }
-            
+
             return Vector3.zero;
         }
 
@@ -469,16 +472,16 @@ namespace HockeyEditor
         {
             GameObject selectedPrefab = prefabList[Random.Range(0, prefabList.Count)];
             GameObject destructible = PrefabUtility.InstantiatePrefab(selectedPrefab, parent.transform) as GameObject;
-            
+
             if (destructible != null)
             {
                 destructible.name = $"Destructible_Zone{zoneLevel}_{index}";
                 destructible.transform.position = position;
                 destructible.transform.rotation = Quaternion.Euler(0, Random.Range(0, 360), 0);
-                
+
                 SetupDestructibleComponents(destructible, zoneLevel);
             }
-            
+
             return destructible;
         }
 
@@ -489,14 +492,14 @@ namespace HockeyEditor
             {
                 destructibleComp = destructible.AddComponent<DestructibleObject>();
             }
-            
+
             // レベルと耐久力の設定
-            var levelField = typeof(DestructibleObject).GetField("requiredLevel", 
+            var levelField = typeof(DestructibleObject).GetField("requiredLevel",
                 System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
             if (levelField != null)
             {
                 levelField.SetValue(destructibleComp, zoneLevel);
-                
+
                 var hpField = typeof(DestructibleObject).GetField("maxHitPoints",
                     System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
                 if (hpField != null)
@@ -505,7 +508,7 @@ namespace HockeyEditor
                     hpField.SetValue(destructibleComp, hp);
                 }
             }
-            
+
             // ViewComponentの設定
             DestructibleObjectView destructibleView = destructible.GetComponent<DestructibleObjectView>();
             if (destructibleView == null)
