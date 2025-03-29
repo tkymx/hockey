@@ -23,8 +23,8 @@ MonoBehaviour:
     enableFog: 1
     fogHeight: 5
     fogColor: {r: 1, g: 1, b: 1, a: 0.5}
-    objectDensity: 0.05
-    minObjectDistance: 3
+    objectDensity: 0.01
+    minObjectDistance: 1
     destructiblePrefabs:
     - {fileID: 107626, guid: 236356a33a1a34a8d92b4f0f122758f7, type: 3}
     damageMultiplier: 1

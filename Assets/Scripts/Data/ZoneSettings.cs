@@ -26,9 +26,6 @@ public class ZoneSettings : ScriptableObject
         public Color fogColor = new Color(1f, 1f, 1f, 0.5f);
         
         [Header("Destructible Objects")]
-        public float objectDensity = 0.05f; // オブジェクトの密度（単位面積あたりの数）
-        [Range(1f, 10f)]
-        public float minObjectDistance = 3f; // オブジェクト間の最小距離
         public List<GameObject> destructiblePrefabs; // このゾーンで使用可能な破壊可能オブジェクトのプレファブ
         
         [Header("Gameplay")]

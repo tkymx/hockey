@@ -171,10 +171,6 @@ namespace HockeyEditor
 
                     EditorGUI.indentLevel++;
                     
-                    // Object Density Setting
-                    zone.objectDensity = EditorGUILayout.Slider("Object Density", zone.objectDensity, 0.01f, 0.2f);
-                    zone.minObjectDistance = EditorGUILayout.Slider("Min Distance", zone.minObjectDistance, 1f, 10f);
-
                     // Prefab List
                     int prefabCount = zone.destructiblePrefabs.Count;
                     int newPrefabCount = EditorGUILayout.IntField("Prefab Count", prefabCount);
@@ -276,12 +272,7 @@ namespace HockeyEditor
                 zoneController.ZoneLevel = i + 1;
                 zoneController.RequiredPlayerLevel = zoneData.requiredLevel;
                 zoneController.Radius = zoneData.radius;
-                
-                // コライダーの設定
-                SphereCollider zoneCollider = zone.AddComponent<SphereCollider>();
-                zoneCollider.radius = zoneData.radius;
-                zoneCollider.isTrigger = true;
-                
+                                
                 // ゾーン壁の作成
                 if (zoneData.wallHeight > 0)
                 {
