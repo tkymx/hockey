@@ -209,9 +209,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mass: 2
   collisionForceMultiplier: 2.5
-  level: 1
-  experiencePoints: 0
   experienceThresholds: 00000000e8030000a00f000070170000401f000010270000
+  moveSpeed: 10
+  baseDamage: 100
+  baseExperience: 0
+  experienceToNextLevel: 1000
+  levelDamageMultiplier: 0.5
   growthStage: 1
   maxGrowthStage: 5
   stageScales:

@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEditor.SceneManagement;
 using System.Collections.Generic;
-using UnityEngine.SceneManagement; // SceneManagementの参照を追加
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -23,7 +23,6 @@ public class GameManager : MonoBehaviour
     [SerializeField] private PuckController puckController;
     [SerializeField] private Transform puckSpawnPoint;
     
-    private List<DestructibleObject> destructibleObjects = new List<DestructibleObject>();
     private bool isGameActive = false;
 
     private void Start()
@@ -55,12 +54,19 @@ public class GameManager : MonoBehaviour
         // GrowthManagerの初期化
         growthManager.Initialize(playerManager, puckController);
 
-        // プレイヤーのレベル変更イベントを購読（UI更新用）
+        // プレイヤーのレベル変更イベントを購読
         if (player != null)
         {
             gameHUDView.UpdateLevel(player.Level);
             player.OnLevelChanged += HandlePlayerLevelChanged;
         }
+        
+        // ゾーン変更イベントを購読
+        stageController.OnZoneChanged += HandleZoneChanged;
+        stageController.OnAllZonesCleared += HandleAllZonesCleared;
+        
+        // オブジェクト破壊イベントを購読
+        stageController.OnObjectDestroyedInStage += HandleObjectDestroyedInStage;
     }
 
     private void StartGame()
@@ -78,9 +84,6 @@ public class GameManager : MonoBehaviour
         timeManager.ResetTimer();
         timeManager.StartTimer();
         
-        // 破壊可能オブジェクトを収集
-        CollectDestructibleObjects();
-        
         // パックの初期化
         InitializePuck();
         
@@ -88,12 +91,15 @@ public class GameManager : MonoBehaviour
         if (playerManager != null)
         {
             playerManager.ResetPlayer();
- 
-            // StageControllerの初期化（プレイヤーとStageManagerの参照を渡す）
-            stageController.Initialize(playerManager.GetPlayer(), stageManager);    
         }
         
-        // プレイヤーのレベル変更イベントを再購読（UI更新用）
+        // StageControllerの初期化 - PlayerManagerを渡す
+        stageController.Initialize(stageManager, playerManager);
+        
+        // UIを更新
+        UpdateGameUI();
+        
+        // プレイヤーのレベル変更イベントを再購読
         Player player = playerManager.GetPlayer();
         if (player != null)
         {
@@ -141,26 +147,6 @@ public class GameManager : MonoBehaviour
         }
     }
     
-    private void CollectDestructibleObjects()
-    {
-        destructibleObjects.Clear();
-        
-        // シーン内の全ての破壊可能オブジェクトを取得
-        DestructibleObject[] objects = FindObjectsByType<DestructibleObject>(FindObjectsSortMode.None);
-        foreach (var obj in objects)
-        {
-            if (obj != null)
-            {
-                destructibleObjects.Add(obj);
-                
-                // 破壊イベントを購読
-                obj.OnObjectDestroyed += HandleObjectDestroyed;
-            }
-        }
-        
-        Debug.Log($"{destructibleObjects.Count}個の破壊可能オブジェクトを見つけました。");
-    }
-    
     private void InitializePuck()
     {
         if (puckController == null)
@@ -186,11 +172,59 @@ public class GameManager : MonoBehaviour
         puckController.ResetPuck(spawnPosition);
     }
     
-    // オブジェクトが破壊された時の処理
-    private void HandleObjectDestroyed(DestructibleObject obj, int points)
+    // ゾーン変更時の処理（StageControllerからのイベント受信）
+    private void HandleZoneChanged(int newZoneIndex)
     {
-        scoreManager.AddPoints(points);
+        // UIを更新
+        UpdateGameUI();
+        
+        // 新しいゾーンを開始したときの処理
+        PlayZoneChangeEffect();
+        
+        // ボーナスポイントの加算
+        int zoneChangeBonus = 1000 * (newZoneIndex - 1);
+        scoreManager.AddPoints(zoneChangeBonus);
         gameHUDView.UpdateScore(scoreManager.GetCurrentScore());
+    }
+    
+    // 全ゾーンクリア時の処理（StageControllerからのイベント受信）
+    private void HandleAllZonesCleared()
+    {
+        // 全ゾーンクリア時のボーナスポイント
+        int clearBonus = 5000;
+        scoreManager.AddPoints(clearBonus);
+        gameHUDView.UpdateScore(scoreManager.GetCurrentScore());
+        
+        // 勝利演出
+        PlayVictoryEffect();
+        
+        // ゲーム終了処理（すべてクリアでゲーム終了）
+        HandleGameOver();
+    }
+    
+    private void PlayZoneChangeEffect()
+    {
+        // ゾーン変更時のエフェクト再生
+        int currentZone = stageController.GetCurrentZoneIndex() + 1;
+        Debug.Log($"ゾーン {currentZone} に進みました！");
+    }
+    
+    private void PlayVictoryEffect()
+    {
+        // 勝利時のエフェクト再生
+        Debug.Log("すべてのゾーンをクリアしました！");
+    }
+    
+    private void UpdateGameUI()
+    {
+        // ゾーン情報をUIに表示
+        if (gameHUDView != null && stageController != null)
+        {
+            int currentZone = stageController.GetCurrentZoneIndex() + 1;
+            int totalZones = stageController.GetTotalZoneCount();
+            gameHUDView.UpdateZone(currentZone, totalZones);
+            gameHUDView.UpdateScore(scoreManager.GetCurrentScore());
+        }
     }
     
     private void HandleTimeChanged(float remainingTime)
@@ -233,9 +267,26 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // 破壊可能オブジェクトが破壊されたときの処理
+    private void HandleObjectDestroyedInStage(ZoneController zone, DestructibleObject obj, int points)
+    {
+        // スコアに加算
+        if (scoreManager != null)
+        {
+            scoreManager.AddPoints(points);
+            
+            // UIの更新
+            if (gameHUDView != null)
+            {
+                gameHUDView.UpdateScore(scoreManager.GetCurrentScore());
+            }
+        }
+        
+        Debug.Log($"破壊オブジェクト +{points}ポイント（ゾーン{zone.ZoneLevel}）");
+    }
+
     private void OnDestroy()
     {
-        // イベントの購読解除
         if (playerManager != null)
         {
             Player player = playerManager.GetPlayer();
@@ -254,6 +305,13 @@ public class GameManager : MonoBehaviour
         if (gameOverMenuView != null)
         {
             gameOverMenuView.OnRestartRequested.RemoveListener(RestartGame);
+        }
+        
+        if (stageController != null)
+        {
+            stageController.OnZoneChanged -= HandleZoneChanged;
+            stageController.OnAllZonesCleared -= HandleAllZonesCleared;
+            stageController.OnObjectDestroyedInStage -= HandleObjectDestroyedInStage;
         }
     }
 }

@@ -9,6 +9,11 @@ public class Player : MonoBehaviour
 
     [Header("Player Stats")]
     [SerializeField] private int[] experienceThresholds = { 0, 100, 300, 600, 1000 }; // レベルアップに必要な経験値
+    [SerializeField] private float moveSpeed = 10f;
+    [SerializeField] private float baseDamage = 100.0f;
+    [SerializeField] private int baseExperience = 0;
+    [SerializeField] private int experienceToNextLevel = 1000;
+    [SerializeField] private float levelDamageMultiplier = 0.5f; // レベルごとのダメージ倍率の増加量
 
     [Header("Growth Settings")]
     [SerializeField] private int growthStage = 1;
@@ -19,6 +24,9 @@ public class Player : MonoBehaviour
 
     private int level = 1;
     int experiencePoints = 0;
+    private int currentLevel = 1;
+    private int currentExperience = 0;
+    private ZoneController currentZone;
 
     public int Level => level;
     public int GrowthStage => growthStage;
@@ -139,6 +147,13 @@ public class Player : MonoBehaviour
         bool didLevelUp = false;
         experiencePoints += exp;
 
+        // ゾーンのスコア倍率を経験値にも適用する（オプション）
+        if (currentZone != null)
+        {
+            exp = Mathf.RoundToInt(exp * currentZone.GetScoreMultiplier());
+        }
+
+
         while (level < experienceThresholds.Length && experiencePoints >= experienceThresholds[level])
         {
             level++;
@@ -198,6 +213,40 @@ public class Player : MonoBehaviour
         if (growthStage != 1)
         {
             UpdateGrowthStage(1);
+        }
+    }
+
+    internal float GetDamageMultiplier()
+    {
+        // 基本ダメージにレベルボーナスとゾーンボーナスを加算
+        float levelBonus = (currentLevel - 1) * levelDamageMultiplier;
+        float zoneMultiplier = (currentZone != null) ? currentZone.GetDamageMultiplier() : 1.0f;
+
+        return (baseDamage + levelBonus) * zoneMultiplier;
+    }
+
+    public void Initialize()
+    {
+        currentLevel = 1;
+        currentExperience = 0;
+    }
+
+    public void SetCurrentZone(ZoneController zone)
+    {
+        currentZone = zone;
+    }
+
+    public void ResetPosition()
+    {
+        // プレイヤーの初期位置にリセット
+        if (currentZone != null)
+        {
+            float z = -(currentZone.Depth / 2f) + 2f; // ゾーンの後方から少し前に配置
+            transform.position = new Vector3(0f, transform.position.y, z);
+        }
+        else
+        {
+            transform.position = new Vector3(0f, transform.position.y, -10f);
         }
     }
 }

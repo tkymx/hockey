@@ -4,12 +4,14 @@ using System;
 public class DestructibleObject : MonoBehaviour
 {
     [Header("Object Properties")]
+    [SerializeField] private float maxHitPoints = 100f;
     [SerializeField] private int pointValue = 100;
-    [SerializeField] private int requiredLevel = 1; // このオブジェクトを破壊するために必要なプレイヤーレベル
     [SerializeField] private GameObject explosionPrefab;
     
+    private float currentHitPoints;
     private bool isDestroyed = false;
     
+    // オブジェクト破壊時のイベント（破壊されたオブジェクトとスコアポイントを通知）
     public event Action<DestructibleObject, int> OnObjectDestroyed;
 
     private void Awake()
@@ -34,11 +36,14 @@ public class DestructibleObject : MonoBehaviour
                 Debug.LogWarning($"レンダラーが見つからないため、デフォルトサイズのコライダーを追加しました: {gameObject.name}");
             }
         }
+        
+        Initialize();
     }
     
     public void Initialize()
     {
         isDestroyed = false;
+        currentHitPoints = maxHitPoints;
         
         // コライダーを有効化
         Collider collider = GetComponent<Collider>();
@@ -55,14 +60,27 @@ public class DestructibleObject : MonoBehaviour
         }
     }
     
+    public void TakeDamage(float amount, GameObject source)
+    {
+        if (isDestroyed || amount <= 0) return;
+        
+        currentHitPoints -= amount;
+        
+        if (currentHitPoints <= 0)
+        {
+            DestroyObject(source);
+        }
+    }
+    
     public void Hit(float force, Player player)
     {
         if (isDestroyed) return;
 
-        // プレイヤーのレベルが要求レベル以上の場合のみ破壊可能
-        if (player != null && player.GetBreakableObjectLevel() >= requiredLevel)
+        float damage = force * (player != null ? player.GetDamageMultiplier() : 1.0f);
+        TakeDamage(damage, player ? player.gameObject : null);
+        
+        if (currentHitPoints <= 0 && player != null)
         {
-            Destroy();
             // 経験値を付与
             bool didLevelUp = player.GainExperience(pointValue);
             if (didLevelUp)
@@ -73,7 +91,7 @@ public class DestructibleObject : MonoBehaviour
         }
     }
     
-    public void Destroy()
+    private void DestroyObject(GameObject source)
     {
         if (isDestroyed) return;
         
@@ -85,7 +103,7 @@ public class DestructibleObject : MonoBehaviour
             Instantiate(explosionPrefab, transform.position, Quaternion.identity);
         }
         
-        // イベント発火
+        // 破壊時のスコアポイントをイベントで通知
         OnObjectDestroyed?.Invoke(this, pointValue);
         
         // オブジェクトを非表示にする
@@ -116,6 +134,11 @@ public class DestructibleObject : MonoBehaviour
         return pointValue;
     }
     
+    public float GetHealthPercentage()
+    {
+        return currentHitPoints / maxHitPoints;
+    }
+    
     private void OnCollisionEnter(Collision collision)
     {
         if (collision.gameObject.GetComponent<Puck>() != null)
@@ -128,7 +151,4 @@ public class DestructibleObject : MonoBehaviour
             Hit(impactForce, player);
         }
     }
-
-    // 要求レベル取得用のプロパティ
-    public int RequiredLevel => requiredLevel;
 }

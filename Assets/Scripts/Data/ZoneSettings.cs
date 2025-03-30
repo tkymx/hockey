@@ -11,8 +11,7 @@ public class ZoneSettings : ScriptableObject
         [Header("Basic Settings")]
         public float width = 20f;  // 横幅
         public float depth = 20f;  // 奥行き
-        public float forwardOffset = 0f;  // 前方へのオフセット
-        public int requiredLevel = 1;
+        public float playerAreaDepth = 5f; // プレイヤーが操作する手前エリアの深さ
         
         [Header("Wall Settings")]
         [Range(0f, 10f)]
@@ -59,8 +58,7 @@ public class ZoneSettings : ScriptableObject
                 {
                     width = 20f + (i * 10f),
                     depth = 20f + (i * 10f),
-                    forwardOffset = i * 15f,
-                    requiredLevel = i + 1,
+                    playerAreaDepth = 5f,
                     wallHeight = 3f,
                     wallThickness = 0.3f,
                     fogHeight = 5f,
@@ -75,7 +73,6 @@ public class ZoneSettings : ScriptableObject
                 };
             }
         }
-
         // 値の範囲チェックと自動補正
         for (int i = 0; i < zones.Length; i++)
         {
@@ -83,9 +80,6 @@ public class ZoneSettings : ScriptableObject
             {
                 zones[i] = new ZoneData();
             }
-
-            // レベル要件が適切な順序になるようにする
-            zones[i].requiredLevel = Mathf.Max(1, i + 1);
         }
     }
 }

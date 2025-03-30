@@ -144,10 +144,9 @@ namespace HockeyEditor
                         EditorGUILayout.LabelField("Size Settings", EditorStyles.boldLabel);
                         zone.width = EditorGUILayout.FloatField("Width", zone.width);
                         zone.depth = EditorGUILayout.FloatField("Depth", zone.depth);
-                        zone.forwardOffset = EditorGUILayout.FloatField("Forward Offset", zone.forwardOffset);
+                        zone.playerAreaDepth = EditorGUILayout.FloatField("Player Area Depth", zone.playerAreaDepth);
                     }
 
-                    zone.requiredLevel = EditorGUILayout.IntField("Required Level", zone.requiredLevel);
                     zone.fogColor = EditorGUILayout.ColorField("Zone Color", zone.fogColor);
 
                     using (new EditorGUILayout.HorizontalScope())
@@ -258,7 +257,7 @@ namespace HockeyEditor
                 foreach (var zone in zoneSettings.zones)
                 {
                     maxWidth = Mathf.Max(maxWidth, zone.width);
-                    maxDepth = Mathf.Max(maxDepth, zone.depth + zone.forwardOffset);
+                    maxDepth = Mathf.Max(maxDepth, zone.depth);
                 }
             }
 
@@ -314,11 +313,10 @@ namespace HockeyEditor
 
                 // ZoneControllerの追加と設定
                 ZoneController zoneController = zone.AddComponent<ZoneController>();
+                zoneController.ZoneSettings = zoneSettings;
                 zoneController.ZoneLevel = i + 1;
-                zoneController.RequiredPlayerLevel = zoneData.requiredLevel;
                 zoneController.Width = zoneData.width;
                 zoneController.Depth = zoneData.depth;
-                zoneController.ForwardOffset = zoneData.forwardOffset;
 
                 // ゾーン壁の作成
                 if (zoneData.wallHeight > 0)
@@ -344,13 +342,9 @@ namespace HockeyEditor
 
             // ZoneWallコンポーネントを追加
             ZoneWall zoneWall = wallContainer.AddComponent<ZoneWall>();
-            zoneWall.RequiredLevel = zoneData.requiredLevel;
 
             // 四角形の壁を作成
             CreateRectangularWalls(wallContainer, zoneData);
-
-            // ゾーンを前方にオフセット
-            zone.transform.position = new Vector3(0, 0, zoneData.forwardOffset);
         }
 
         private void CreateRectangularWalls(GameObject parent, ZoneSettings.ZoneData zoneData)
@@ -450,8 +444,7 @@ namespace HockeyEditor
             float innerDepth = depth - (wallThickness * 2);
             
             // ForwardOffsetを考慮した実際の配置可能範囲
-            float usableDepth = innerDepth - zoneData.forwardOffset;
-            float zOffset = -zoneData.forwardOffset / 2; // Back側から配置開始位置をずらす
+            float usableDepth = innerDepth;
             
             // 利用可能な面積に基づいてオブジェクト数を調整
             float usableArea = innerWidth * usableDepth;
@@ -461,7 +454,7 @@ namespace HockeyEditor
 
             for (int i = 0; i < adjustedCount; i++)
             {
-                Vector3 position = GetValidPositionInZone(innerWidth, usableDepth, zOffset, wallThickness, minDistance, placedPositions);
+                Vector3 position = GetValidPositionInZone(innerWidth, usableDepth, 0, wallThickness, minDistance, placedPositions);
                 if (position != Vector3.zero)
                 {
                     GameObject destructible = CreateDestructibleObject(position, container, prefabList, i, zoneLevel);
@@ -541,20 +534,22 @@ namespace HockeyEditor
                 destructibleComp = destructible.AddComponent<DestructibleObject>();
             }
 
-            // レベルと耐久力の設定
-            var levelField = typeof(DestructibleObject).GetField("requiredLevel",
+            // ヒットポイントを設定
+            var hpField = typeof(DestructibleObject).GetField("maxHitPoints",
                 System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-            if (levelField != null)
+            if (hpField != null)
             {
-                levelField.SetValue(destructibleComp, zoneLevel);
+                float hp = zoneLevel * 100f;
+                hpField.SetValue(destructibleComp, hp);
+            }
 
-                var hpField = typeof(DestructibleObject).GetField("maxHitPoints",
-                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-                if (hpField != null)
-                {
-                    float hp = zoneLevel * 100f;
-                    hpField.SetValue(destructibleComp, hp);
-                }
+            // ポイント値を設定
+            var pointField = typeof(DestructibleObject).GetField("pointValue",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            if (pointField != null)
+            {
+                int points = zoneLevel * 100;
+                pointField.SetValue(destructibleComp, points);
             }
 
             // ViewComponentの設定

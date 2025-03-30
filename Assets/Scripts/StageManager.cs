@@ -1,10 +1,13 @@
 using UnityEngine;
+using System;
 
 public class StageManager : MonoBehaviour
 {
     [SerializeField] private GameObject stagePrefab;
     private GameObject currentStage;
     private Bounds stageBounds;
+    
+    public event Action<GameObject> OnStageLoaded;
 
     public void Initialize()
     {
@@ -24,6 +27,9 @@ public class StageManager : MonoBehaviour
 
         currentStage = Instantiate(stagePrefab);
         CalculateStageBounds();
+        
+        // ステージロードイベントを発行
+        OnStageLoaded?.Invoke(currentStage);
     }
 
     private void CalculateStageBounds()

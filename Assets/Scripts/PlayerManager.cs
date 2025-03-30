@@ -2,55 +2,49 @@ using UnityEngine;
 
 public class PlayerManager : MonoBehaviour
 {
-    [SerializeField] private GameObject playerPrefab;
-    [SerializeField] private Vector3 initialPosition = Vector3.zero;
+    [SerializeField] private Player playerPrefab;
+    
     private Player currentPlayer;
-
+    
     public void Initialize()
     {
-        if (playerPrefab == null)
+        if (currentPlayer == null)
         {
-            Debug.LogError("Player prefab is not assigned!");
-            return;
+            // Default spawn position if not specified elsewhere
+            SpawnPlayer(new Vector3(0, 0.5f, -10f));
         }
-        CreatePlayer();
+        else
+        {
+            // 既存のプレイヤーを初期化
+            currentPlayer.Initialize();
+        }
     }
-
-    public void CreatePlayer()
+    
+    public void SpawnPlayer(Vector3 position)
     {
-        if (currentPlayer != null)
-        {
-            Destroy(currentPlayer.gameObject);
-        }
-
-        GameObject playerObject = Instantiate(playerPrefab);
-        currentPlayer = playerObject.GetComponent<Player>();
-        SetInitialPlayerPosition(initialPosition);
+        currentPlayer = Instantiate(playerPrefab, position, Quaternion.identity);
+        currentPlayer.Initialize();
     }
-
-    public void SetInitialPlayerPosition(Vector3 position)
-    {
-        if (currentPlayer != null)
-        {
-            currentPlayer.SetPosition(position);
-        }
-    }
-
+    
     public Player GetPlayer()
     {
         return currentPlayer;
     }
     
-    // プレイヤーを初期位置にリセット
     public void ResetPlayer()
     {
         if (currentPlayer != null)
         {
-            currentPlayer.SetPosition(initialPosition);
+            currentPlayer.ResetPosition();
         }
-        else
+    }
+    
+    // 現在のゾーンをプレイヤーに設定
+    public void UpdatePlayerZone(ZoneController zone)
+    {
+        if (currentPlayer != null)
         {
-            CreatePlayer();
+            currentPlayer.SetCurrentZone(zone);
         }
     }
 }
