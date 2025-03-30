@@ -112,8 +112,7 @@ public class StageController : MonoBehaviour
     {
         if (currentZone != null)
         {
-            float radius = currentZone.Radius;
-            return new Vector3(radius * 2, 0, radius * 2); // 直径をx,zに設定
+            return new Vector3(currentZone.Width, 0, currentZone.Depth); // 直径をx,zに設定
         }
         return Vector3.zero;
     }

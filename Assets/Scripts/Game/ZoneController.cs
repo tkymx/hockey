@@ -5,14 +5,18 @@ public class ZoneController : MonoBehaviour
 {
     [SerializeField] private int zoneLevel;
     [SerializeField] private int requiredPlayerLevel;
-    [SerializeField] private float radius;
+    [SerializeField] private float width;
+    [SerializeField] private float depth;
+    [SerializeField] private float forwardOffset;
 
     private bool isCurrentZone;
 
     public int ZoneLevel { get => zoneLevel; set => zoneLevel = value; }
     public int RequiredPlayerLevel { get => requiredPlayerLevel; set => requiredPlayerLevel = value; }
-    public float Radius { get => radius; set => radius = value; }
     public bool IsCurrentZone { get => isCurrentZone; set => isCurrentZone = value; }
+    public float Width { get => width; set => width = value; }
+    public float Depth { get => depth; set => depth = value; }
+    public float ForwardOffset { get => forwardOffset; set => forwardOffset = value; }
 
     public void Initialize(int playerLevel)
     {
@@ -43,11 +47,6 @@ public class ZoneController : MonoBehaviour
         {
             PlayUnlockEffect();
         }
-    }
-
-    internal void Initialize(object playerLevel)
-    {
-        throw new NotImplementedException();
     }
 
     private void PlayUnlockEffect()

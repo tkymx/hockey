@@ -9,7 +9,9 @@ public class ZoneSettings : ScriptableObject
     public class ZoneData
     {
         [Header("Basic Settings")]
-        public float radius = 10f;
+        public float width = 20f;  // 横幅
+        public float depth = 20f;  // 奥行き
+        public float forwardOffset = 0f;  // 前方へのオフセット
         public int requiredLevel = 1;
         
         [Header("Wall Settings")]
@@ -55,7 +57,9 @@ public class ZoneSettings : ScriptableObject
             {
                 zones[i] = new ZoneData
                 {
-                    radius = 8f + (i * 7f), // 段階的に大きくなる半径
+                    width = 20f + (i * 10f),
+                    depth = 20f + (i * 10f),
+                    forwardOffset = i * 15f,
                     requiredLevel = i + 1,
                     wallHeight = 3f,
                     wallThickness = 0.3f,
@@ -78,12 +82,6 @@ public class ZoneSettings : ScriptableObject
             if (zones[i] == null)
             {
                 zones[i] = new ZoneData();
-            }
-
-            // 半径が前のゾーンより小さくならないようにする
-            if (i > 0 && zones[i].radius <= zones[i - 1].radius)
-            {
-                zones[i].radius = zones[i - 1].radius + 5f;
             }
 
             // レベル要件が適切な順序になるようにする
