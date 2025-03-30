@@ -16,7 +16,7 @@ MonoBehaviour:
   defaultFogMaterial: {fileID: 0}
   zones:
   - width: 20
-    depth: 50
+    depth: 60
     playerAreaDepth: 10
     wallHeight: 3
     wallThickness: 0.3
@@ -29,7 +29,7 @@ MonoBehaviour:
     damageMultiplier: 1
     scoreMultiplier: 1
   - width: 20
-    depth: 50
+    depth: 60
     playerAreaDepth: 10
     wallHeight: 3
     wallThickness: 0.3
@@ -42,7 +42,7 @@ MonoBehaviour:
     damageMultiplier: 1
     scoreMultiplier: 1
   - width: 30
-    depth: 60
+    depth: 90
     playerAreaDepth: 10
     wallHeight: 3
     wallThickness: 0.3
@@ -55,7 +55,7 @@ MonoBehaviour:
     damageMultiplier: 1
     scoreMultiplier: 1
   - width: 30
-    depth: 60
+    depth: 90
     playerAreaDepth: 10
     wallHeight: 3
     wallThickness: 0.3
@@ -68,7 +68,7 @@ MonoBehaviour:
     damageMultiplier: 1
     scoreMultiplier: 1
   - width: 40
-    depth: 70
+    depth: 120
     playerAreaDepth: 10
     wallHeight: 3
     wallThickness: 0.3

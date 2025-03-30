@@ -294,22 +294,6 @@ namespace HockeyEditor
 
                 GameObject zone = new GameObject($"Zone_{i + 1}");
                 zone.transform.SetParent(parent.transform);
-                
-                // 位置を設定
-                if (i == 0)
-                {
-                    // 最初のゾーンは原点中心に配置
-                    zone.transform.position = Vector3.zero;
-                    firstZone = zone;
-                    firstZoneBackZ = -zoneData.depth / 2; // 最初のゾーンのBack位置を記録
-                }
-                else
-                {
-                    // 後続ゾーンは最初のゾーンのBack位置に自分のBackが来るように配置
-                    float zoneBackZ = -zoneData.depth / 2; // このゾーンのローカル座標でのBack位置
-                    float targetZ = firstZoneBackZ - zoneBackZ; // 最初のゾーンのBackに合わせるZ位置
-                    zone.transform.position = new Vector3(0, 0, targetZ);
-                }
 
                 // ZoneControllerの追加と設定
                 ZoneController zoneController = zone.AddComponent<ZoneController>();

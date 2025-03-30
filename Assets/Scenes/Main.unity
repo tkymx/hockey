@@ -129,7 +129,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 6209069182254960771, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: stageMaxForce.Array.size
-      value: 1
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6209069182254960771, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
+      propertyPath: stageMaxSpeed.Array.size
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 6209069182254960771, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: 'stageScales.Array.data[0]'
@@ -157,19 +161,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6209069182254960771, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: 'stageMaxForce.Array.data[1]'
-      value: 80
+      value: 200
       objectReference: {fileID: 0}
     - target: {fileID: 6209069182254960771, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: 'stageMaxForce.Array.data[2]'
-      value: 120
+      value: 200
       objectReference: {fileID: 0}
     - target: {fileID: 6209069182254960771, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: 'stageMaxForce.Array.data[3]'
-      value: 180
+      value: 200
       objectReference: {fileID: 0}
     - target: {fileID: 6209069182254960771, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: 'stageMaxForce.Array.data[4]'
-      value: 250
+      value: 200
       objectReference: {fileID: 0}
     - target: {fileID: 6209069182254960771, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: 'stageMaxSpeed.Array.data[0]'
@@ -177,7 +181,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6209069182254960771, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: 'stageMaxSpeed.Array.data[1]'
-      value: 60
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 6209069182254960771, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: 'stageMaxSpeed.Array.data[2]'
@@ -185,11 +189,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6209069182254960771, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: 'stageMaxSpeed.Array.data[3]'
-      value: 140
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 6209069182254960771, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: 'stageMaxSpeed.Array.data[4]'
-      value: 200
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 6891186105139685067, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: m_Name
@@ -2253,13 +2257,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2050796835}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.5, y: 0, z: 0, w: 0.8660254}
+  m_LocalRotation: {x: 0.38268343, y: 0, z: 0, w: 0.92387956}
   m_LocalPosition: {x: 0, y: 10, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 60, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 45, y: 0, z: 0}
 --- !u!114 &2050796839
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2272,10 +2276,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a42a29b9aa77e4037ad81d8f6acb334f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cameraAngle: 45
-  zOffset: -2.5
-  moveDuration: 0.01
-  easeType: 4
+  targetCamera: {fileID: 2050796837}
+  cameraAngleX: 35
+  cameraAngleY: 0
+  viewMargin: 1.1
+  moveSpeed: 1
+  rotationSpeed: 1
 --- !u!1 &2050831255
 GameObject:
   m_ObjectHideFlags: 0

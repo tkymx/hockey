@@ -2,70 +2,103 @@ using UnityEngine;
 
 public class CameraController : MonoBehaviour
 {
-    [Header("Camera Settings")]
-    [SerializeField] private float cameraAngle = 45f; // カメラの見下ろし角度（デフォルト45度）
-    [SerializeField] private float zOffset = 0f; // ステージに対するZ方向のオフセット（+で後ろ側、-で前側）
-    [SerializeField] private float moveDuration = 0.5f; // カメラ移動時間
-    [SerializeField] private LeanTweenType easeType = LeanTweenType.easeInOutQuad; // イージングタイプ
-    
-    private Camera _camera;
-    private Vector3 _targetPosition;
-    private bool _isMoving = false;
-    
-    private void Awake()
+    [SerializeField] private Camera targetCamera;
+    [SerializeField] private float cameraAngleX = 45f; // 垂直方向の角度（見下ろし角度）
+    [SerializeField] private float cameraAngleY = 0f;  // 水平方向の角度（回転）
+    [SerializeField] private float viewMargin = 1.1f;  // 視界に余裕を持たせる係数（10%のマージン）
+    [SerializeField] private float moveSpeed = 5.0f;   // カメラ移動の速度
+    [SerializeField] private float rotationSpeed = 3.0f; // カメラ回転の速度
+
+    private Vector3 targetPosition;    // 目標位置
+    private Quaternion targetRotation; // 目標回転
+
+    private void Start()
     {
-        _camera = GetComponent<Camera>();
-        if (_camera == null)
+        // 初期化時にターゲットカメラがなければMainCameraを取得
+        if (targetCamera == null)
         {
-            _camera = Camera.main;
+            targetCamera = Camera.main;
+        }
+
+        // 初期位置と回転を現在の値に設定
+        if (targetCamera != null)
+        {
+            targetPosition = targetCamera.transform.position;
+            targetRotation = targetCamera.transform.rotation;
         }
     }
-    
-    public void UpdateCameraPosition(Vector3 stageCenter, Vector3 stageBounds)
-    {
-        if (_camera == null) return;
 
-        // カメラの角度を設定
-        transform.rotation = Quaternion.Euler(cameraAngle, 0f, 0f);
-        
-        // ステージの寸法を取得（ゾーンの直径を使用）
-        float zoneWidth = stageBounds.x;
-        float zoneDepth = stageBounds.z;
-        
-        // カメラ角度（ラジアン）
-        float cameraAngleRad = cameraAngle * Mathf.Deg2Rad;
-        
-        // カメラの現在のFOV（ラジアン）
-        float fovRad = _camera.fieldOfView * Mathf.Deg2Rad * 0.5f;
-        
-        // ステージの中心からカメラまでの必要な距離を計算
-        // 横幅と奥行きの両方が視界に収まる必要がある
-        float distanceForWidth = (zoneWidth * 0.5f) / (Mathf.Tan(fovRad) * _camera.aspect);
-        float distanceForDepth = (zoneDepth * 0.5f) / Mathf.Tan(fovRad);
-        
-        // 大きい方の距離を採用
-        float distance = Mathf.Max(distanceForWidth, distanceForDepth);
-        
-        // カメラの高さと後ろ方向のオフセットを計算
-        float cameraHeight = distance * Mathf.Sin(cameraAngleRad);
-        float cameraZOffset = distance * Mathf.Cos(cameraAngleRad);
-        
-        // 目標位置を計算
-        Vector3 newPosition = new Vector3(
-            stageCenter.x,
-            cameraHeight,
-            stageCenter.z - cameraZOffset + zOffset
+    private void LateUpdate()
+    {
+        // カメラがない場合は何もしない
+        if (targetCamera == null) return;
+
+        // 現在の位置から目標位置へスムーズに移動
+        targetCamera.transform.position = Vector3.Lerp(
+            targetCamera.transform.position,
+            targetPosition,
+            moveSpeed * Time.deltaTime
         );
 
-        // 現在の位置と目標位置が十分に離れている場合のみアニメーションを実行
-        if (Vector3.Distance(transform.position, newPosition) > 0.01f)
+        // 現在の回転から目標回転へスムーズに回転
+        targetCamera.transform.rotation = Quaternion.Slerp(
+            targetCamera.transform.rotation,
+            targetRotation,
+            rotationSpeed * Time.deltaTime
+        );
+    }
+
+    public void UpdateCameraPosition(Vector3 stageCenter, Vector3 stageBounds)
+    {
+        if (targetCamera == null)
         {
-            // 既存のトゥイーンをキャンセル
-            LeanTween.cancel(gameObject);
-            
-            // 新しい位置へスムーズに移動
-            LeanTween.move(gameObject, newPosition, moveDuration)
-                .setEase(easeType);
+            targetCamera = Camera.main;
+            if (targetCamera == null)
+            {
+                Debug.LogError("カメラが見つかりません。インスペクタで設定するか、Main Cameraタグを設定してください。");
+                return;
+            }
         }
+
+        // カメラの回転を計算（X軸とY軸の回転を適用）
+        targetRotation = Quaternion.Euler(cameraAngleX, cameraAngleY, 0);
+
+        // カメラの視野角とアスペクト比を取得
+        float verticalFOV = targetCamera.fieldOfView;
+        float horizontalFOV = Camera.VerticalToHorizontalFieldOfView(verticalFOV, targetCamera.aspect);
+
+        // ステージの寸法を考慮して必要な距離を計算
+        // X, Y, Z各方向の最大値を考慮
+        float distanceForWidth = stageBounds.x * viewMargin / (2 * Mathf.Tan(horizontalFOV * 0.5f * Mathf.Deg2Rad));
+        float distanceForHeight = stageBounds.y * viewMargin / (2 * Mathf.Tan(verticalFOV * 0.5f * Mathf.Deg2Rad));
+        float distanceForDepth = stageBounds.z * viewMargin / (2 * Mathf.Tan(verticalFOV * 0.5f * Mathf.Deg2Rad));
+
+        // 必要な最大距離を計算
+        float distance = Mathf.Max(distanceForWidth, distanceForHeight, distanceForDepth);
+
+        // 角度を考慮してカメラ位置を計算
+        float radAngleX = cameraAngleX * Mathf.Deg2Rad;
+        float radAngleY = cameraAngleY * Mathf.Deg2Rad;
+
+        // カメラの位置を計算
+        Vector3 cameraOffset = new Vector3(
+            distance * Mathf.Sin(radAngleY), 
+            distance * Mathf.Sin(radAngleX), 
+            -distance * Mathf.Cos(radAngleX) * Mathf.Cos(radAngleY)
+        );
+
+        // ステージの中心からオフセットを適用して目標位置を設定
+        targetPosition = stageCenter + cameraOffset;
+
+        // LookAtの代わりに目標回転を計算
+        Vector3 direction = stageCenter - targetPosition;
+        if (direction != Vector3.zero)
+        {
+            targetRotation = Quaternion.LookRotation(direction);
+        }
+
+        // デバッグログ
+        Debug.Log($"Target Position: {targetPosition}, Target Rotation: {targetRotation.eulerAngles}");
+        Debug.Log($"Stage Center: {stageCenter}, Stage Bounds: {stageBounds}, Distance: {distance}");
     }
 }
