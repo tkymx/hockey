@@ -415,150 +415,146 @@ namespace HockeyEditor
 
         private void CreateZoneDestructibles(GameObject zone, int zoneIndex)
         {
+            if (zoneSettings == null || zoneIndex >= zoneSettings.zones.Length) return;
+            
+            var zoneData = zoneSettings.zones[zoneIndex];
+            if (zoneData == null || zoneData.destructiblePrefabs == null || zoneData.destructiblePrefabs.Count == 0) return;
+            
+            // 破壊可能オブジェクトのコンテナを作成
             GameObject destructiblesContainer = new GameObject("Destructibles");
             destructiblesContainer.transform.SetParent(zone.transform, false);
-
-            var zoneData = zoneSettings.zones[zoneIndex];
-            float zoneArea = zoneData.width * zoneData.depth;
-            int objectCount = Mathf.RoundToInt(zoneArea * 0.05f); // 密度調整
-
-            List<GameObject> prefabList = zoneData.destructiblePrefabs;
-            if (prefabList == null || prefabList.Count == 0)
+            
+            // プレイヤーエリアのサイズを計算
+            float safeAreaDepth = zoneData.playerAreaDepth;
+            float playableAreaStartZ = -zoneData.depth / 2 + safeAreaDepth;
+            float playableAreaEndZ = zoneData.depth / 2;
+            float playableWidth = zoneData.width * 0.9f; // 壁に近すぎる場所は避ける
+            
+            // プレファブの数を決定（ゾーンの広さに応じて変化）
+            int prefabCount = Mathf.CeilToInt((zoneData.width * zoneData.depth) / 30f);
+            prefabCount = Mathf.Min(prefabCount, 20); // 最大数を制限
+            
+            // 既に配置した位置を記録して重複を避ける
+            List<Vector3> usedPositions = new List<Vector3>();
+            
+            for (int i = 0; i < prefabCount; i++)
             {
-                Debug.LogWarning($"Zone {zoneIndex + 1} has no prefabs assigned!");
-                return;
-            }
-
-            PlaceZoneDestructibles(destructiblesContainer, zoneData.width, zoneData.depth, objectCount, zoneIndex + 1, prefabList);
-        }
-
-        private void PlaceZoneDestructibles(GameObject container, float width, float depth,
-            int count, int zoneLevel, List<GameObject> prefabList)
-        {
-            var zoneData = zoneSettings.zones[zoneLevel - 1];
-            float minDistance = 3f;
-            float wallThickness = zoneData.wallThickness;
-
-            // 壁の内側の実際の配置可能範囲を計算
-            float innerWidth = width - (wallThickness * 2);
-            float innerDepth = depth - (wallThickness * 2);
-            
-            // ForwardOffsetを考慮した実際の配置可能範囲
-            float usableDepth = innerDepth;
-            
-            // 利用可能な面積に基づいてオブジェクト数を調整
-            float usableArea = innerWidth * usableDepth;
-            int adjustedCount = Mathf.Min(count, Mathf.FloorToInt(usableArea / (minDistance * minDistance)));
-            
-            List<Vector3> placedPositions = new List<Vector3>();
-
-            for (int i = 0; i < adjustedCount; i++)
-            {
-                Vector3 position = GetValidPositionInZone(innerWidth, usableDepth, 0, wallThickness, minDistance, placedPositions);
-                if (position != Vector3.zero)
+                // ランダムなプレファブを選択
+                int prefabIndex = UnityEngine.Random.Range(0, zoneData.destructiblePrefabs.Count);
+                GameObject prefab = zoneData.destructiblePrefabs[prefabIndex];
+                
+                if (prefab == null) continue;
+                
+                // ランダムな位置を生成（プレイヤーエリアを避ける）
+                Vector3 position = GetRandomPosition(
+                    playableWidth,
+                    playableAreaStartZ,
+                    playableAreaEndZ,
+                    usedPositions,
+                    prefab
+                );
+                
+                // プレファブをインスタンス化して配置
+                GameObject destructible = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+                destructible.name = $"Destructible_{i+1}";
+                destructible.transform.SetParent(destructiblesContainer.transform, false);
+                destructible.transform.position = position;
+                
+                // Y位置を調整（プレファブのサイズに基づいて）
+                Renderer renderer = destructible.GetComponent<Renderer>();
+                if (renderer != null)
                 {
-                    GameObject destructible = CreateDestructibleObject(position, container, prefabList, i, zoneLevel);
-                    if (destructible != null)
-                    {
-                        placedPositions.Add(position);
-                    }
+                    float yOffset = renderer.bounds.extents.y;
+                    destructible.transform.position = new Vector3(
+                        position.x,
+                        yOffset,
+                        position.z
+                    );
                 }
+                
+                // ランダムな回転を適用
+                destructible.transform.rotation = Quaternion.Euler(0, UnityEngine.Random.Range(0, 360), 0);
+                
+                // DestructibleObjectとDestructibleObjectViewコンポーネントを追加して設定
+                SetupDestructibleComponents(destructible, zoneIndex);
+                
+                usedPositions.Add(position);
             }
         }
-
-        private Vector3 GetValidPositionInZone(float width, float depth, float zOffset, float wallThickness, float minDistance, List<Vector3> placedPositions)
+        
+        private Vector3 GetRandomPosition(float width, float minZ, float maxZ, List<Vector3> usedPositions, GameObject prefab)
         {
-            int maxAttempts = 50;
-            int attempts = 0;
-
-            while (attempts < maxAttempts)
+            const int MAX_ATTEMPTS = 30;
+            const float MIN_DISTANCE = 2.5f; // オブジェクト間の最小距離
+            
+            // プレファブのサイズを取得
+            float prefabRadius = 1.0f; // デフォルト値
+            Renderer renderer = prefab.GetComponent<Renderer>();
+            if (renderer != null)
             {
-                // 壁の内側かつForwardOffset考慮した範囲に配置
-                float x = Random.Range(-width/2, width/2);
-                float z = Random.Range(-depth/2, depth/2) + zOffset;
-
-                Vector3 position = new Vector3(x, 1f, z);
-
-                // 他のオブジェクトとの距離チェック
-                bool isValid = true;
-                foreach (Vector3 placedPos in placedPositions)
+                // プレファブの大きさに基づいて間隔を調整
+                prefabRadius = Mathf.Max(
+                    renderer.bounds.extents.x,
+                    renderer.bounds.extents.z
+                );
+                prefabRadius *= 1.2f; // 少し余裕を持たせる
+            }
+            
+            for (int attempt = 0; attempt < MAX_ATTEMPTS; attempt++)
+            {
+                // ランダムな位置を生成
+                float x = UnityEngine.Random.Range(-width/2, width/2);
+                float z = UnityEngine.Random.Range(minZ, maxZ);
+                Vector3 position = new Vector3(x, 0, z);
+                
+                // 他のオブジェクトとの距離をチェック
+                bool validPosition = true;
+                foreach (var usedPos in usedPositions)
                 {
-                    if (Vector3.Distance(position, placedPos) < minDistance)
+                    float distance = Vector2.Distance(
+                        new Vector2(position.x, position.z),
+                        new Vector2(usedPos.x, usedPos.z)
+                    );
+                    
+                    if (distance < MIN_DISTANCE + prefabRadius)
                     {
-                        isValid = false;
+                        validPosition = false;
                         break;
                     }
                 }
-
-                // 壁からの最小距離を確保
-                float wallMargin = 1f;
-                if (Mathf.Abs(x) > (width/2 - wallMargin))
-                {
-                    isValid = false;
-                }
-
-                if (isValid)
+                
+                if (validPosition)
                 {
                     return position;
                 }
-
-                attempts++;
             }
-
-            return Vector3.zero;
+            
+            // 適切な位置が見つからない場合はフォールバック
+            return new Vector3(
+                UnityEngine.Random.Range(-width/2, width/2),
+                0,
+                UnityEngine.Random.Range(minZ, maxZ)
+            );
         }
 
-        private GameObject CreateDestructibleObject(Vector3 position, GameObject parent, List<GameObject> prefabList, int index, int zoneLevel)
+        private void SetupDestructibleComponents(GameObject destructible, int zoneIndex)
         {
-            GameObject selectedPrefab = prefabList[Random.Range(0, prefabList.Count)];
-            GameObject destructible = PrefabUtility.InstantiatePrefab(selectedPrefab) as GameObject;
-
-            if (destructible != null)
+            // DestructibleObjectコンポーネントの追加と設定
+            DestructibleObject objectModel = destructible.GetComponent<DestructibleObject>();
+            if (objectModel == null)
             {
-                destructible.name = $"Destructible_Zone{zoneLevel}_{index}";
-                destructible.transform.position = position;
-                destructible.transform.rotation = Quaternion.Euler(0, Random.Range(0, 360), 0);
-                destructible.transform.SetParent(parent.transform, false);
-
-                SetupDestructibleComponents(destructible, zoneLevel);
+                objectModel = destructible.AddComponent<DestructibleObject>();
             }
-
-            return destructible;
-        }
-
-        private void SetupDestructibleComponents(GameObject destructible, int zoneLevel)
-        {
-            DestructibleObject destructibleComp = destructible.GetComponent<DestructibleObject>();
-            if (destructibleComp == null)
+                        
+            // DestructibleObjectViewコンポーネントの追加と設定
+            DestructibleObjectView objectView = destructible.GetComponent<DestructibleObjectView>();
+            if (objectView == null)
             {
-                destructibleComp = destructible.AddComponent<DestructibleObject>();
+                objectView = destructible.AddComponent<DestructibleObjectView>();
             }
-
-            // ヒットポイントを設定
-            var hpField = typeof(DestructibleObject).GetField("maxHitPoints",
-                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-            if (hpField != null)
-            {
-                float hp = zoneLevel * 100f;
-                hpField.SetValue(destructibleComp, hp);
-            }
-
-            // ポイント値を設定
-            var pointField = typeof(DestructibleObject).GetField("pointValue",
-                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-            if (pointField != null)
-            {
-                int points = zoneLevel * 100;
-                pointField.SetValue(destructibleComp, points);
-            }
-
-            // ViewComponentの設定
-            DestructibleObjectView destructibleView = destructible.GetComponent<DestructibleObjectView>();
-            if (destructibleView == null)
-            {
-                destructibleView = destructible.AddComponent<DestructibleObjectView>();
-            }
-            destructibleView.Initialize(destructibleComp);
+            
+            // Viewを初期化
+            objectView.Initialize(objectModel);
         }
     }
 }

@@ -17,8 +17,8 @@ MonoBehaviour:
   zones:
   - width: 20
     depth: 50
-    playerAreaDepth: 20
-    wallHeight: 3.6
+    playerAreaDepth: 10
+    wallHeight: 3
     wallThickness: 0.3
     wallMaterial: {fileID: 0}
     enableFog: 1
@@ -30,7 +30,7 @@ MonoBehaviour:
     scoreMultiplier: 1
   - width: 20
     depth: 50
-    playerAreaDepth: 20
+    playerAreaDepth: 10
     wallHeight: 3
     wallThickness: 0.3
     wallMaterial: {fileID: 0}
@@ -69,7 +69,7 @@ MonoBehaviour:
     scoreMultiplier: 1
   - width: 40
     depth: 70
-    playerAreaDepth: 5
+    playerAreaDepth: 10
     wallHeight: 3
     wallThickness: 0.3
     wallMaterial: {fileID: 0}
