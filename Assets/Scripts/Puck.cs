@@ -59,7 +59,6 @@ public class Puck : MonoBehaviour
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous; // 高速移動時の衝突検出を改善
 
         // 当たり判定の設定
-        sphereCollider.radius = transform.localScale.x / 2;
         PhysicsMaterial puckMaterial = new PhysicsMaterial
         {
             dynamicFriction = 0.01f, // ほとんど摩擦なし
@@ -201,12 +200,6 @@ public class Puck : MonoBehaviour
         if (rb != null)
         {
             rb.mass = mass;
-        }
-
-        // コライダーのサイズも更新
-        if (sphereCollider != null)
-        {
-            sphereCollider.radius = transform.localScale.x / 2;
         }
     }
 

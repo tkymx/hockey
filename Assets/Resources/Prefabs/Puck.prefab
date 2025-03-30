@@ -187,7 +187,6 @@ MonoBehaviour:
   frictionCoefficient: 0.995
   airResistance: 0.998
   minVelocityThreshold: 0.05
-  maxSpeed: 20
   growthStage: 1
   maxGrowthStage: 5
   stageScales:
@@ -203,11 +202,9 @@ MonoBehaviour:
   - 3
   - 4
   stageMaxSpeed:
-  - 5
-  - 15
-  - 25
-  - 50
-  - 75
+  - 100
+  stageMaxForce:
+  - 200
   stageFriction:
   - 0.993
   - 0.995

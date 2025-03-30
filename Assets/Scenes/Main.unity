@@ -129,7 +129,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 6209069182254960771, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: stageMaxForce.Array.size
-      value: 5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6209069182254960771, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: 'stageScales.Array.data[0]'
@@ -153,7 +153,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6209069182254960771, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: 'stageMaxForce.Array.data[0]'
-      value: 30
+      value: 200
       objectReference: {fileID: 0}
     - target: {fileID: 6209069182254960771, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: 'stageMaxForce.Array.data[1]'
@@ -173,7 +173,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6209069182254960771, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: 'stageMaxSpeed.Array.data[0]'
-      value: 20
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 6209069182254960771, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: 'stageMaxSpeed.Array.data[1]'
