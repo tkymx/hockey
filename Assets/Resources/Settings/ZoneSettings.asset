@@ -15,7 +15,8 @@ MonoBehaviour:
   defaultWallMaterial: {fileID: 0}
   defaultFogMaterial: {fileID: 0}
   zones:
-  - width: 20
+  - frontWidth: 10
+    backWidth: 40
     depth: 60
     playerAreaDepth: 10
     wallHeight: 3
@@ -28,7 +29,8 @@ MonoBehaviour:
     - {fileID: 107626, guid: 236356a33a1a34a8d92b4f0f122758f7, type: 3}
     damageMultiplier: 1
     scoreMultiplier: 1
-  - width: 20
+  - frontWidth: 10
+    backWidth: 40
     depth: 60
     playerAreaDepth: 10
     wallHeight: 3
@@ -41,7 +43,8 @@ MonoBehaviour:
     - {fileID: 107626, guid: 236356a33a1a34a8d92b4f0f122758f7, type: 3}
     damageMultiplier: 1
     scoreMultiplier: 1
-  - width: 30
+  - frontWidth: 15
+    backWidth: 60
     depth: 90
     playerAreaDepth: 10
     wallHeight: 3
@@ -54,7 +57,8 @@ MonoBehaviour:
     - {fileID: 107626, guid: ee78a677c597346f1b385fb1392a01db, type: 3}
     damageMultiplier: 1
     scoreMultiplier: 1
-  - width: 30
+  - frontWidth: 15
+    backWidth: 60
     depth: 90
     playerAreaDepth: 10
     wallHeight: 3
@@ -67,7 +71,8 @@ MonoBehaviour:
     - {fileID: 107626, guid: ee78a677c597346f1b385fb1392a01db, type: 3}
     damageMultiplier: 1
     scoreMultiplier: 1
-  - width: 40
+  - frontWidth: 20
+    backWidth: 80
     depth: 120
     playerAreaDepth: 10
     wallHeight: 3

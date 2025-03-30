@@ -142,7 +142,8 @@ namespace HockeyEditor
                     using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
                     {
                         EditorGUILayout.LabelField("Size Settings", EditorStyles.boldLabel);
-                        zone.width = EditorGUILayout.FloatField("Width", zone.width);
+                        zone.frontWidth = EditorGUILayout.FloatField("Front Width (Camera Side)", zone.frontWidth);
+                        zone.backWidth = EditorGUILayout.FloatField("Back Width (Far Side)", zone.backWidth);
                         zone.depth = EditorGUILayout.FloatField("Depth", zone.depth);
                         zone.playerAreaDepth = EditorGUILayout.FloatField("Player Area Depth", zone.playerAreaDepth);
                     }
@@ -155,18 +156,6 @@ namespace HockeyEditor
                         zone.wallHeight = EditorGUILayout.Slider("Height", zone.wallHeight, 0f, 10f);
                         zone.wallThickness = EditorGUILayout.Slider("Thickness", zone.wallThickness, 0.1f, 1f);
                     }
-
-                    using (new EditorGUILayout.HorizontalScope())
-                    {
-                        EditorGUILayout.LabelField("Fog Settings", EditorStyles.boldLabel, GUILayout.Width(100));
-                        zone.enableFog = EditorGUILayout.Toggle("Enable", zone.enableFog);
-                        if (zone.enableFog)
-                        {
-                            zone.fogHeight = EditorGUILayout.Slider("Height", zone.fogHeight, 0f, 10f);
-                        }
-                    }
-
-                    EditorGUILayout.Space(5);
 
                     // Destructible Prefabs Settings
                     EditorGUILayout.LabelField("Destructible Prefabs", EditorStyles.boldLabel);
@@ -256,7 +245,7 @@ namespace HockeyEditor
             {
                 foreach (var zone in zoneSettings.zones)
                 {
-                    maxWidth = Mathf.Max(maxWidth, zone.width);
+                    maxWidth = Mathf.Max(maxWidth, zone.frontWidth, zone.backWidth);
                     maxDepth = Mathf.Max(maxDepth, zone.depth);
                 }
             }
@@ -299,7 +288,8 @@ namespace HockeyEditor
                 ZoneController zoneController = zone.AddComponent<ZoneController>();
                 zoneController.ZoneSettings = zoneSettings;
                 zoneController.ZoneLevel = i + 1;
-                zoneController.Width = zoneData.width;
+                // 手前のゾーンのZ位置を基準にする（カメラの計算に利用する）
+                zoneController.Width = zoneData.frontWidth;
                 zoneController.Depth = zoneData.depth;
 
                 // ゾーン壁の作成
@@ -327,17 +317,74 @@ namespace HockeyEditor
             // ZoneWallコンポーネントを追加
             ZoneWall zoneWall = wallContainer.AddComponent<ZoneWall>();
 
-            // 四角形の壁を作成
-            CreateRectangularWalls(wallContainer, zoneData);
+            // 台形の壁を作成
+            CreateTrapezoidWalls(wallContainer, zoneData);
         }
 
-        private void CreateRectangularWalls(GameObject parent, ZoneSettings.ZoneData zoneData)
+        private void CreateTrapezoidWalls(GameObject parent, ZoneSettings.ZoneData zoneData)
         {
-            // 四辺の壁を作成
-            CreateWallSegment(parent, new Vector3(0, 0, zoneData.depth/2), zoneData.width, zoneData, "Front");
-            CreateWallSegment(parent, new Vector3(0, 0, -zoneData.depth/2), zoneData.width, zoneData, "Back");
-            CreateWallSegment(parent, new Vector3(zoneData.width/2, 0, 0), zoneData.depth, zoneData, "Right", true);
-            CreateWallSegment(parent, new Vector3(-zoneData.width/2, 0, 0), zoneData.depth, zoneData, "Left", true);
+            // 台形の壁を作成
+            float halfDepth = zoneData.depth / 2;
+            float halfFrontWidth = zoneData.frontWidth / 2;
+            float halfBackWidth = zoneData.backWidth / 2;
+
+            // 前壁（プレイヤー側）
+            CreateWallSegment(parent, new Vector3(0, 0, -halfDepth), zoneData.frontWidth, zoneData, "Front");
+            
+            // 後壁（奥側）
+            CreateWallSegment(parent, new Vector3(0, 0, halfDepth), zoneData.backWidth, zoneData, "Back");
+            
+            // 側壁（台形の形になるように角度をつけて配置）
+            CreateTrapezoidSideWall(parent, 1, halfFrontWidth, halfBackWidth, halfDepth, zoneData, "Right"); // 右側壁
+            CreateTrapezoidSideWall(parent, -1, halfFrontWidth, halfBackWidth, halfDepth, zoneData, "Left"); // 左側壁
+        }
+
+        private void CreateTrapezoidSideWall(GameObject parent, float side, float halfFrontWidth, float halfBackWidth, float halfDepth, ZoneSettings.ZoneData zoneData, string name)
+        {
+            GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            wall.name = $"Wall_{name}";
+            wall.transform.SetParent(parent.transform, false);
+            
+            // 壁の中心位置を計算
+            // 前後の端点の中間を壁の中心とする
+            float frontX = side * halfFrontWidth;
+            float backX = side * halfBackWidth;
+            float centerX = (frontX + backX) / 2;
+            
+            // 壁の中心位置
+            wall.transform.position = new Vector3(
+                centerX,
+                zoneData.wallHeight / 2,
+                0
+            );
+            
+            // 側壁の長さを計算（ピタゴラスの定理で対角線の長さを求める）
+            float wallLength = Mathf.Sqrt(Mathf.Pow(zoneData.depth, 2) + Mathf.Pow(backX - frontX, 2));
+            
+            // 側壁の回転角度を計算
+            float angle = Mathf.Atan2(backX - frontX, zoneData.depth) * Mathf.Rad2Deg;
+            
+            // 壁を適切な角度に回転
+            wall.transform.rotation = Quaternion.Euler(0, angle, 0);
+            
+            // 壁のスケールを設定
+            wall.transform.localScale = new Vector3(
+                zoneData.wallThickness,
+                zoneData.wallHeight,
+                wallLength
+            );
+            
+            // マテリアルの設定
+            if (zoneSettings.defaultWallMaterial != null)
+            {
+                wall.GetComponent<MeshRenderer>().material = zoneSettings.defaultWallMaterial;
+            }
+            
+            // BoxColliderをMeshColliderに変更
+            DestroyImmediate(wall.GetComponent<BoxCollider>());
+            MeshCollider meshCollider = wall.AddComponent<MeshCollider>();
+            meshCollider.convex = true;
+            meshCollider.isTrigger = false;
         }
 
         private void CreateWallSegment(GameObject parent, Vector3 position, float length, ZoneSettings.ZoneData zoneData, string name, bool rotated = false)
@@ -385,8 +432,11 @@ namespace HockeyEditor
             fog.name = "ZoneFog";
             fog.transform.SetParent(zone.transform);
 
+            // 台形の平均幅を使ってフォグのサイズを決定
+            float averageWidth = (zoneData.frontWidth + zoneData.backWidth) / 2f;
+            
             fog.transform.localScale = new Vector3(
-                zoneData.width,
+                averageWidth,
                 zoneData.fogHeight,
                 zoneData.depth
             );
@@ -412,10 +462,10 @@ namespace HockeyEditor
             float safeAreaDepth = zoneData.playerAreaDepth;
             float playableAreaStartZ = -zoneData.depth / 2 + safeAreaDepth;
             float playableAreaEndZ = zoneData.depth / 2;
-            float playableWidth = zoneData.width * 0.9f; // 壁に近すぎる場所は避ける
-            
+                        
             // プレファブの数を決定（ゾーンの広さに応じて変化）
-            int prefabCount = Mathf.CeilToInt((zoneData.width * zoneData.depth) / 30f);
+            float averageWidth = (zoneData.frontWidth + zoneData.backWidth) / 2f;
+            int prefabCount = Mathf.CeilToInt((averageWidth * zoneData.depth) / 30f);
             prefabCount = Mathf.Min(prefabCount, 20); // 最大数を制限
             
             // 既に配置した位置を記録して重複を避ける
@@ -431,11 +481,11 @@ namespace HockeyEditor
                 
                 // ランダムな位置を生成（プレイヤーエリアを避ける）
                 Vector3 position = GetRandomPosition(
-                    playableWidth,
                     playableAreaStartZ,
                     playableAreaEndZ,
                     usedPositions,
-                    prefab
+                    prefab,
+                    zoneIndex
                 );
                 
                 // プレファブをインスタンス化して配置
@@ -466,7 +516,7 @@ namespace HockeyEditor
             }
         }
         
-        private Vector3 GetRandomPosition(float width, float minZ, float maxZ, List<Vector3> usedPositions, GameObject prefab)
+        private Vector3 GetRandomPosition(float minZ, float maxZ, List<Vector3> usedPositions, GameObject prefab, int zoneIndex)
         {
             const int MAX_ATTEMPTS = 30;
             const float MIN_DISTANCE = 2.5f; // オブジェクト間の最小距離
@@ -484,41 +534,56 @@ namespace HockeyEditor
                 prefabRadius *= 1.2f; // 少し余裕を持たせる
             }
             
-            for (int attempt = 0; attempt < MAX_ATTEMPTS; attempt++)
+            // 台形形状内にランダムな位置を生成するよう更新
+            var zoneData = zoneSettings.zones[zoneIndex]; // 基準のゾーン
+            if (zoneSettings != null)
             {
-                // ランダムな位置を生成
-                float x = UnityEngine.Random.Range(-width/2, width/2);
-                float z = UnityEngine.Random.Range(minZ, maxZ);
-                Vector3 position = new Vector3(x, 0, z);
-                
-                // 他のオブジェクトとの距離をチェック
-                bool validPosition = true;
-                foreach (var usedPos in usedPositions)
+                for (int attempt = 0; attempt < MAX_ATTEMPTS; attempt++)
                 {
-                    float distance = Vector2.Distance(
-                        new Vector2(position.x, position.z),
-                        new Vector2(usedPos.x, usedPos.z)
-                    );
+                    // Z位置に応じた幅の制限を計算（台形の形状に合わせる）
+                    float z = UnityEngine.Random.Range(minZ, maxZ);
                     
-                    if (distance < MIN_DISTANCE + prefabRadius)
+                    // z位置の正規化値（0～1）
+                    float normalizedZ = Mathf.InverseLerp(-zoneData.depth/2, zoneData.depth/2, z);
+                    
+                    // Z位置に応じた幅を計算（線形補間）
+                    float widthAtZ = Mathf.Lerp(zoneData.frontWidth, zoneData.backWidth, normalizedZ) * 0.9f;
+                    
+                    // この幅内でX位置を決定
+                    float x = UnityEngine.Random.Range(-widthAtZ/2, widthAtZ/2);
+                    
+                    Vector3 position = new Vector3(x, 0, z);
+                    
+                    // 他のオブジェクトとの距離をチェック
+                    bool validPosition = true;
+                    foreach (var usedPos in usedPositions)
                     {
-                        validPosition = false;
-                        break;
+                        float distance = Vector2.Distance(
+                            new Vector2(position.x, position.z),
+                            new Vector2(usedPos.x, usedPos.z)
+                        );
+                        
+                        if (distance < MIN_DISTANCE + prefabRadius)
+                        {
+                            validPosition = false;
+                            break;
+                        }
                     }
-                }
-                
-                if (validPosition)
-                {
-                    return position;
+                    
+                    if (validPosition)
+                    {
+                        return position;
+                    }
                 }
             }
             
             // 適切な位置が見つからない場合はフォールバック
-            return new Vector3(
-                UnityEngine.Random.Range(-width/2, width/2),
-                0,
-                UnityEngine.Random.Range(minZ, maxZ)
-            );
+            float fallbackZ = UnityEngine.Random.Range(minZ, maxZ);
+            float normalizedFallbackZ = Mathf.InverseLerp(-zoneData.depth/2, zoneData.depth/2, fallbackZ);
+            float widthAtFallbackZ = Mathf.Lerp(zoneData.backWidth, zoneData.frontWidth, normalizedFallbackZ) * 0.9f;
+            float fallbackX = UnityEngine.Random.Range(-widthAtFallbackZ/2, widthAtFallbackZ/2);
+            
+            return new Vector3(fallbackX, 0, fallbackZ);
         }
 
         private void SetupDestructibleComponents(GameObject destructible, int zoneIndex)
