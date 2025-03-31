@@ -218,20 +218,20 @@ MonoBehaviour:
   growthStage: 1
   maxGrowthStage: 5
   stageScales:
-  - 0.8
   - 1
-  - 1.2
   - 2
-  - 3
-  stageMass:
-  - 1.5
-  - 2
-  - 2.5
   - 5
-  - 7.5
+  - 9
+  - 17
+  stageMass:
+  - 2
+  - 4
+  - 8
+  - 16
+  - 32
   stageCollisionForce:
   - 2
-  - 2.5
-  - 3
   - 4
-  - 5
+  - 8
+  - 16
+  - 32

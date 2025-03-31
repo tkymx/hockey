@@ -153,7 +153,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6209069182254960771, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: 'stageScales.Array.data[4]'
-      value: 10
+      value: 16
       objectReference: {fileID: 0}
     - target: {fileID: 6209069182254960771, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: 'stageMaxForce.Array.data[0]'
@@ -161,19 +161,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6209069182254960771, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: 'stageMaxForce.Array.data[1]'
-      value: 200
+      value: 400
       objectReference: {fileID: 0}
     - target: {fileID: 6209069182254960771, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: 'stageMaxForce.Array.data[2]'
-      value: 200
+      value: 600
       objectReference: {fileID: 0}
     - target: {fileID: 6209069182254960771, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: 'stageMaxForce.Array.data[3]'
-      value: 200
+      value: 800
       objectReference: {fileID: 0}
     - target: {fileID: 6209069182254960771, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: 'stageMaxForce.Array.data[4]'
-      value: 200
+      value: 1000
       objectReference: {fileID: 0}
     - target: {fileID: 6209069182254960771, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: 'stageMaxSpeed.Array.data[0]'
@@ -181,19 +181,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6209069182254960771, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: 'stageMaxSpeed.Array.data[1]'
-      value: 100
+      value: 200
       objectReference: {fileID: 0}
     - target: {fileID: 6209069182254960771, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: 'stageMaxSpeed.Array.data[2]'
-      value: 100
+      value: 300
       objectReference: {fileID: 0}
     - target: {fileID: 6209069182254960771, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: 'stageMaxSpeed.Array.data[3]'
-      value: 100
+      value: 400
       objectReference: {fileID: 0}
     - target: {fileID: 6209069182254960771, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: 'stageMaxSpeed.Array.data[4]'
-      value: 100
+      value: 500
       objectReference: {fileID: 0}
     - target: {fileID: 6891186105139685067, guid: f29eca402d8254843a32da3a8d3e0a5d, type: 3}
       propertyPath: m_Name

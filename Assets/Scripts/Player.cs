@@ -9,10 +9,7 @@ public class Player : MonoBehaviour
 
     [Header("Player Stats")]
     [SerializeField] private int[] experienceThresholds = { 0, 100, 300, 600, 1000 }; // レベルアップに必要な経験値
-    [SerializeField] private float moveSpeed = 10f;
     [SerializeField] private float baseDamage = 100.0f;
-    [SerializeField] private int baseExperience = 0;
-    [SerializeField] private int experienceToNextLevel = 1000;
     [SerializeField] private float levelDamageMultiplier = 0.5f; // レベルごとのダメージ倍率の増加量
 
     [Header("Growth Settings")]
