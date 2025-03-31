@@ -179,18 +179,12 @@ public class GameManager : MonoBehaviour
         // 新しいゾーンを開始したときの処理
         PlayZoneChangeEffect();
         
-        // ボーナスポイントの加算
-        int zoneChangeBonus = 1000 * (newZoneIndex - 1);
-        scoreManager.AddPoints(zoneChangeBonus);
         gameHUDView.UpdateScore(scoreManager.GetCurrentScore());
     }
     
     // 全ゾーンクリア時の処理（StageControllerからのイベント受信）
     private void HandleAllZonesCleared()
     {
-        // 全ゾーンクリア時のボーナスポイント
-        int clearBonus = 5000;
-        scoreManager.AddPoints(clearBonus);
         gameHUDView.UpdateScore(scoreManager.GetCurrentScore());
         
         // 勝利演出
