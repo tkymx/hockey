@@ -79,16 +79,8 @@ public class DestructibleObject : MonoBehaviour
         float damage = force * (player != null ? player.GetDamageMultiplier() : 1.0f);
         TakeDamage(damage, player ? player.gameObject : null);
         
-        if (currentHitPoints <= 0 && player != null)
-        {
-            // 経験値を付与
-            bool didLevelUp = player.GainExperience(pointValue);
-            if (didLevelUp)
-            {
-                // レベルアップ時の処理（エフェクトなど）
-                Debug.Log($"Player leveled up to {player.Level}!");
-            }
-        }
+        // 直接経験値を付与する処理を削除
+        // GameManagerのイベント処理に任せる
     }
     
     private void DestroyObject(GameObject source)

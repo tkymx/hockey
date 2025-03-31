@@ -274,6 +274,20 @@ public class GameManager : MonoBehaviour
             }
         }
         
+        // プレイヤーに経験値を付与する処理を追加
+        if (playerManager != null)
+        {
+            Player player = playerManager.GetPlayer();
+            if (player != null)
+            {
+                bool didLevelUp = player.GainExperience(points);
+                if (didLevelUp)
+                {
+                    Debug.Log($"Player leveled up to {player.Level}!");
+                }
+            }
+        }
+        
         Debug.Log($"破壊オブジェクト +{points}ポイント（ゾーン{zone.ZoneLevel}）");
     }
 

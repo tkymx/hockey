@@ -142,18 +142,24 @@ public class Player : MonoBehaviour
     public bool GainExperience(int exp)
     {
         bool didLevelUp = false;
-        experiencePoints += exp;
-
-        // ゾーンのスコア倍率を経験値にも適用する（オプション）
+        
+        // ゾーンのスコア倍率を経験値にも適用する
         if (currentZone != null)
         {
             exp = Mathf.RoundToInt(exp * currentZone.GetScoreMultiplier());
         }
+        
+        // 経験値を加算
+        experiencePoints += exp;
+        
+        // 現在のレベルで使用すべき変数を更新
+        currentExperience = experiencePoints;
 
-
+        // レベルアップ判定
         while (level < experienceThresholds.Length && experiencePoints >= experienceThresholds[level])
         {
             level++;
+            currentLevel = level;
             didLevelUp = true;
             OnLevelChanged?.Invoke(level);
         }
@@ -226,6 +232,8 @@ public class Player : MonoBehaviour
     {
         currentLevel = 1;
         currentExperience = 0;
+        level = 1;
+        experiencePoints = 0;
     }
 
     public void SetCurrentZone(ZoneController zone)
