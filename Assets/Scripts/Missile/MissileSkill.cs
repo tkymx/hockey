@@ -9,6 +9,8 @@ public class MissileSkill : MonoBehaviour
     private bool isActive = false;
     private float nextFireTime;
     private Puck targetPuck;
+    private ZoneController currentZone;
+    private IMissileTargeting targetingStrategy;
     
     public void Initialize(Player player, Puck puck)
     {
@@ -35,6 +37,22 @@ public class MissileSkill : MonoBehaviour
         
         // 発射コルーチンを開始
         StartCoroutine(FireMissileRoutine());
+    }
+    
+    // 現在のゾーンを設定するメソッド
+    public void SetCurrentZone(ZoneController zone)
+    {
+        currentZone = zone;
+        
+        // 現在のゾーンに基づいてターゲット戦略を更新
+        if (currentZone != null)
+        {
+            targetingStrategy = new ZoneRestrictedTargeting(currentZone);
+        }
+        else
+        {
+            targetingStrategy = new DefaultMissileTargeting();
+        }
     }
     
     private IEnumerator FireMissileRoutine()
@@ -68,11 +86,11 @@ public class MissileSkill : MonoBehaviour
             randomRotation
         );
         
-        // ミサイルを初期化
+        // ミサイルを初期化（ターゲット戦略を渡す）
         Missile missile = missileObj.GetComponent<Missile>();
         if (missile != null)
         {
-            missile.Initialize(missileData, owner);
+            missile.Initialize(missileData, owner, targetingStrategy);
         }
         else
         {

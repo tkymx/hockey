@@ -6,11 +6,13 @@ public class Missile : MonoBehaviour
     private MissileData data;
     private Rigidbody rb;
     private Player owner;
+    private IMissileTargeting targeting;
     
-    public void Initialize(MissileData missileData, Player player)
+    public void Initialize(MissileData missileData, Player player, IMissileTargeting targetingStrategy = null)
     {
         data = missileData;
         owner = player;
+        targeting = targetingStrategy ?? new DefaultMissileTargeting();
         
         rb = GetComponent<Rigidbody>();
         if (rb == null)
@@ -32,8 +34,8 @@ public class Missile : MonoBehaviour
             collider.isTrigger = true;
         }
         
-        // 近くの破壊可能オブジェクトを探索
-        Transform target = FindNearestDestructibleObject();
+        // ターゲッティング戦略を使用して近くの破壊可能オブジェクトを探索
+        Transform target = targeting.GetTarget(transform.position);
         
         // ターゲットが見つかった場合、その方向に向かって発射
         if (target != null)
@@ -55,29 +57,6 @@ public class Missile : MonoBehaviour
         
         // 存在時間後に自動破棄
         Destroy(gameObject, data.lifetime);
-    }
-    
-    private Transform FindNearestDestructibleObject()
-    {
-        // 全ての破壊可能オブジェクトから探索
-        DestructibleObject[] targets = Object.FindObjectsByType<DestructibleObject>(FindObjectsSortMode.None);
-        float closestDistance = float.MaxValue;
-        Transform closestTarget = null;
-        
-        foreach (DestructibleObject destructible in targets)
-        {
-            if (destructible.IsDestroyed())
-                continue;
-            
-            float distance = Vector3.Distance(transform.position, destructible.transform.position);
-            if (distance < closestDistance)
-            {
-                closestDistance = distance;
-                closestTarget = destructible.transform;
-            }
-        }
-        
-        return closestTarget;
     }
     
     private void Update()

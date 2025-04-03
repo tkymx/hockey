@@ -265,6 +265,32 @@ public class ZoneController : MonoBehaviour
         return zoneData != null ? zoneData.scoreMultiplier : 1.0f;
     }
 
+    // ターゲット可能な破壊可能オブジェクトを取得するメソッド
+    public List<DestructibleObject> GetTargetableDestructibles()
+    {
+        List<DestructibleObject> targetables = new List<DestructibleObject>();
+        
+        // ゾーン内の破壊可能オブジェクトを追加
+        foreach (var obj in zoneObjects)
+        {
+            if (obj != null && !obj.IsDestroyed())
+            {
+                targetables.Add(obj);
+            }
+        }
+        
+        // 同心円状オブジェクトで、このゾーンに属するものを追加
+        foreach (var obj in concentricsInZone)
+        {
+            if (obj != null && !obj.IsDestroyed())
+            {
+                targetables.Add(obj);
+            }
+        }
+        
+        return targetables;
+    }
+
     private void OnDestroy()
     {
         // イベント購読を解除

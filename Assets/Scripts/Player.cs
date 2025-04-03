@@ -272,6 +272,20 @@ public class Player : MonoBehaviour
     public void SetCurrentZone(ZoneController zone)
     {
         currentZone = zone;
+        
+        // ミサイルスキルにも現在のゾーンを設定
+        if (missileSkill != null)
+        {
+            missileSkill.SetCurrentZone(zone);
+        }
+        else
+        {
+            MissileSkill skill = GetComponent<MissileSkill>();
+            if (skill != null)
+            {
+                skill.SetCurrentZone(zone);
+            }
+        }
     }
 
     public void ResetPosition()
