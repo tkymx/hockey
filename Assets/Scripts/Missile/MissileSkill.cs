@@ -37,34 +37,6 @@ public class MissileSkill : MonoBehaviour
         StartCoroutine(FireMissileRoutine());
     }
     
-    // 下位互換性のため、古いInitializeメソッドも残す
-    public void Initialize(Player player)
-    {
-        owner = player;
-        
-        // ミサイルデータがない場合はスキルを有効化しない
-        if (missileData == null)
-        {
-            Debug.LogError("MissileData is not assigned for MissileSkill");
-            return;
-        }
-        
-        // パックを探す
-        targetPuck = FindObjectOfType<Puck>();
-        if (targetPuck == null)
-        {
-            Debug.LogError("Puck not found in the scene. Missile skill will not work correctly.");
-            return;
-        }
-        
-        // スキルを有効化
-        isActive = true;
-        nextFireTime = Time.time + missileData.firingInterval;
-        
-        // 発射コルーチンを開始
-        StartCoroutine(FireMissileRoutine());
-    }
-    
     private IEnumerator FireMissileRoutine()
     {
         // スキルがアクティブである限り実行し続ける
@@ -106,19 +78,6 @@ public class MissileSkill : MonoBehaviour
         {
             Debug.LogError("Missile component not found on missile prefab");
             Destroy(missileObj);
-        }
-    }
-    
-    public void SetActive(bool active)
-    {
-        if (isActive == active) return;
-        
-        isActive = active;
-        
-        // アクティブになったときは発射ルーチンを開始
-        if (isActive && !IsInvoking("FireMissileRoutine"))
-        {
-            StartCoroutine(FireMissileRoutine());
         }
     }
     
