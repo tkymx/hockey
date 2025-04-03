@@ -19,6 +19,9 @@ public class Player : MonoBehaviour
     [SerializeField] private float[] stageMass = { 1.5f, 2.0f, 2.5f };
     [SerializeField] private float[] stageCollisionForce = { 2.0f, 2.5f, 3.0f };
 
+    [Header("Skills")]
+    [SerializeField] private MissileSkill missileSkill;
+
     private int level = 1;
     int experiencePoints = 0;
     private int currentLevel = 1;
@@ -234,6 +237,36 @@ public class Player : MonoBehaviour
         currentExperience = 0;
         level = 1;
         experiencePoints = 0;
+        
+        // ミサイルスキルの初期化
+        InitializeSkills();
+    }
+
+    private void InitializeSkills()
+    {
+        // シーンからパックを探す
+        Puck puck = FindObjectOfType<Puck>();
+        if (puck == null)
+        {
+            Debug.LogError("シーン内にPuckが見つかりません。ミサイルスキルが正常に動作しない可能性があります。");
+        }
+        
+        // ミサイルスキルがアタッチされていれば初期化する
+        if (missileSkill != null)
+        {
+            missileSkill.Initialize(this, puck);
+        }
+        else
+        {
+            // ミサイルスキルがアタッチされていない場合は、動的に追加
+            MissileSkill skill = GetComponent<MissileSkill>();
+            if (skill == null)
+            {
+                skill = gameObject.AddComponent<MissileSkill>();
+            }
+            // スキルを初期化
+            skill.Initialize(this, puck);
+        }
     }
 
     public void SetCurrentZone(ZoneController zone)

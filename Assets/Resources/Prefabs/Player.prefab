@@ -122,6 +122,7 @@ GameObject:
   - component: {fileID: 7423000898570340234}
   - component: {fileID: 1437904210984166224}
   - component: {fileID: 944210118006708391}
+  - component: {fileID: 6783374358207419856}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -210,17 +211,14 @@ MonoBehaviour:
   mass: 2
   collisionForceMultiplier: 2.5
   experienceThresholds: 00000000e8030000a00f000070170000401f000010270000
-  moveSpeed: 10
   baseDamage: 100
-  baseExperience: 0
-  experienceToNextLevel: 1000
   levelDamageMultiplier: 0.5
   growthStage: 1
   maxGrowthStage: 5
   stageScales:
   - 1
   - 2
-  - 5
+  - 3
   - 9
   - 17
   stageMass:
@@ -235,3 +233,17 @@ MonoBehaviour:
   - 8
   - 16
   - 32
+  missileSkill: {fileID: 6783374358207419856}
+--- !u!114 &6783374358207419856
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6475538133156668125}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6124c006971c84d8c9289bd5d9e5901c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  missileData: {fileID: 11400000, guid: e27fd610a8acd4b508c85fa53c88a3de, type: 2}
