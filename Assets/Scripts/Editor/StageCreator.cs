@@ -8,6 +8,17 @@ namespace HockeyEditor
 {
     using static HockeyPrefabManager;
 
+    [System.Serializable]
+    public class ConcentricRingSettings
+    {
+        public float minRadius;
+        public float maxRadius;
+        public List<GameObject> prefabs = new List<GameObject>();
+        public int density = 5; // 配置密度
+        [Range(0, 1)]
+        public float randomOffset = 0.3f; // 円からのランダムオフセット
+    }
+
     [ExecuteInEditMode]
     public class StageCreator : EditorWindow
     {
@@ -20,6 +31,12 @@ namespace HockeyEditor
         private bool showZoneSettings = false;
         private Vector2 zoneSettingsScroll;
 
+        // 同心円状オブジェクト設定
+        [SerializeField] private List<ConcentricRingSettings> concentricRings = new List<ConcentricRingSettings>();
+        private bool showConcentricSettings = false;
+        private Vector2 concentricSettingsScroll;
+        private bool createConcentricObjects = false;
+
         [MenuItem("Hockey/Create Stage")]
         public static void ShowWindow()
         {
@@ -29,8 +46,30 @@ namespace HockeyEditor
         private void OnEnable()
         {
             prefabManager = HockeyPrefabManager.Instance;
+            
+            // デフォルトの同心円設定を追加
+            if (concentricRings.Count == 0)
+            {
+                concentricRings.Add(new ConcentricRingSettings { 
+                    minRadius = 0, 
+                    maxRadius = 5, 
+                    density = 5, 
+                    randomOffset = 0.2f 
+                });
+                concentricRings.Add(new ConcentricRingSettings { 
+                    minRadius = 5, 
+                    maxRadius = 10, 
+                    density = 8, 
+                    randomOffset = 0.3f 
+                });
+                concentricRings.Add(new ConcentricRingSettings { 
+                    minRadius = 10, 
+                    maxRadius = 15, 
+                    density = 12, 
+                    randomOffset = 0.4f 
+                });
+            }
         }
-
 
         private void OnGUI()
         {
@@ -45,12 +84,21 @@ namespace HockeyEditor
             EditorGUILayout.LabelField("Basic Stage Settings", EditorStyles.boldLabel);
             stageMaterial = (Material)EditorGUILayout.ObjectField("Stage Material", stageMaterial, typeof(Material), false);
 
-
             EditorGUILayout.Space();
 
             EditorGUILayout.LabelField("Level Prefabs", EditorStyles.boldLabel);
 
             EditorGUILayout.Space();
+
+            // 同心円状オブジェクト設定の表示
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                showConcentricSettings = EditorGUILayout.Foldout(showConcentricSettings, "Concentric Object Settings", true);
+                if (showConcentricSettings)
+                {
+                    DrawConcentricSettings();
+                }
+            }
 
             if (GUILayout.Button("Create Stage"))
             {
@@ -66,6 +114,106 @@ namespace HockeyEditor
                     DrawZoneSettings();
                 }
             }
+        }
+
+        private void DrawConcentricSettings()
+        {
+            EditorGUILayout.BeginVertical();
+
+            // 同心円状オブジェクトを生成するかどうか
+            createConcentricObjects = EditorGUILayout.Toggle("Create Concentric Objects", createConcentricObjects);
+            
+            if (!createConcentricObjects)
+            {
+                EditorGUILayout.EndVertical();
+                return;
+            }
+
+            // 同心円の数を制御
+            EditorGUI.indentLevel++;
+            
+            int ringCount = EditorGUILayout.IntField("Ring Count", concentricRings.Count);
+            if (ringCount != concentricRings.Count)
+            {
+                if (ringCount > concentricRings.Count)
+                {
+                    while (concentricRings.Count < ringCount)
+                    {
+                        float lastMaxRadius = concentricRings.Count > 0 ? 
+                            concentricRings[concentricRings.Count - 1].maxRadius : 0;
+                        
+                        concentricRings.Add(new ConcentricRingSettings {
+                            minRadius = lastMaxRadius,
+                            maxRadius = lastMaxRadius + 5,
+                            density = 5 + concentricRings.Count * 2,
+                            randomOffset = 0.2f + concentricRings.Count * 0.05f
+                        });
+                    }
+                }
+                else
+                {
+                    while (concentricRings.Count > ringCount)
+                    {
+                        concentricRings.RemoveAt(concentricRings.Count - 1);
+                    }
+                }
+            }
+
+            concentricSettingsScroll = EditorGUILayout.BeginScrollView(concentricSettingsScroll);
+            
+            // 各同心円リングの設定
+            for (int i = 0; i < concentricRings.Count; i++)
+            {
+                var ring = concentricRings[i];
+                
+                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                EditorGUILayout.LabelField($"Ring {i+1}", EditorStyles.boldLabel);
+                
+                // 半径の設定
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField("Radius Range:", GUILayout.Width(100));
+                ring.minRadius = EditorGUILayout.FloatField(ring.minRadius, GUILayout.Width(50));
+                EditorGUILayout.LabelField("to", GUILayout.Width(20));
+                ring.maxRadius = EditorGUILayout.FloatField(ring.maxRadius, GUILayout.Width(50));
+                EditorGUILayout.EndHorizontal();
+                
+                // 密度とランダムオフセット
+                ring.density = EditorGUILayout.IntSlider("Density", ring.density, 1, 20);
+                ring.randomOffset = EditorGUILayout.Slider("Random Offset", ring.randomOffset, 0, 1);
+                
+                // プレハブリスト
+                EditorGUILayout.LabelField("Prefabs:", EditorStyles.boldLabel);
+                EditorGUI.indentLevel++;
+                
+                int prefabCount = EditorGUILayout.IntField("Count", ring.prefabs.Count);
+                if (prefabCount != ring.prefabs.Count)
+                {
+                    while (ring.prefabs.Count < prefabCount)
+                        ring.prefabs.Add(null);
+                    while (ring.prefabs.Count > prefabCount)
+                        ring.prefabs.RemoveAt(prefabCount);
+                }
+                
+                for (int j = 0; j < ring.prefabs.Count; j++)
+                {
+                    ring.prefabs[j] = (GameObject)EditorGUILayout.ObjectField(
+                        $"Prefab {j+1}",
+                        ring.prefabs[j],
+                        typeof(GameObject),
+                        false
+                    );
+                }
+                
+                EditorGUI.indentLevel--;
+                EditorGUILayout.EndVertical();
+                
+                EditorGUILayout.Space(5);
+            }
+            
+            EditorGUILayout.EndScrollView();
+            EditorGUI.indentLevel--;
+            
+            EditorGUILayout.EndVertical();
         }
 
         private void DrawZoneSettings()
@@ -220,7 +368,16 @@ namespace HockeyEditor
             CreateGround(stageObject);
 
             // ゾーンの作成
-            CreateZones(stageObject);
+            List<ZoneController> zoneControllers = CreateZones(stageObject);
+
+            // 同心円状オブジェクトの作成
+            if (createConcentricObjects)
+            {
+                List<DestructibleObject> concentricObjects = CreateConcentricDestructibles(stageObject);
+                
+                // 各同心円状オブジェクトを対応するゾーンに割り当て
+                AssignConcentricObjectsToZones(concentricObjects, zoneControllers);
+            }
 
             // プレハブを保存
             HockeyPrefabManager.EnsurePrefabDirectory();
@@ -230,6 +387,200 @@ namespace HockeyEditor
             DestroyImmediate(stageObject);
 
             EditorUtility.DisplayDialog("Success", "Stage prefab has been created!", "OK");
+        }
+
+        // ゾーンを作成し、ZoneControllerのリストを返す
+        private List<ZoneController> CreateZones(GameObject parent)
+        {
+            List<ZoneController> zoneControllers = new List<ZoneController>();
+            
+            if (zoneSettings == null)
+            {
+                Debug.LogError("Zone Settings is not assigned!");
+                return zoneControllers;
+            }
+
+            for (int i = 0; i < zoneSettings.zones.Length; i++)
+            {
+                var zoneData = zoneSettings.zones[i];
+                if (zoneData == null) continue;
+
+                GameObject zone = new GameObject($"Zone_{i + 1}");
+                zone.transform.SetParent(parent.transform);
+
+                // ZoneControllerの追加と設定
+                ZoneController zoneController = zone.AddComponent<ZoneController>();
+                zoneController.ZoneSettings = zoneSettings;
+                zoneController.ZoneLevel = i;
+                zoneController.Width = zoneData.frontWidth;
+                zoneController.Depth = zoneData.depth;
+                
+                zoneControllers.Add(zoneController);
+
+                // ゾーン壁の作成
+                if (zoneData.wallHeight > 0)
+                {
+                    CreateZoneWall(zone, i, zoneData);
+                }
+
+                // 破壊可能オブジェクトの配置
+                CreateZoneDestructibles(zone, i);
+
+                // フォグエフェクトの作成
+                if (zoneData.enableFog && zoneSettings.defaultFogMaterial != null)
+                {
+                    CreateZoneFog(zone, i, zoneData);
+                }
+            }
+            
+            return zoneControllers;
+        }
+
+        // 同心円状オブジェクトを作成し、生成したDestructibleObjectのリストを返す
+        private List<DestructibleObject> CreateConcentricDestructibles(GameObject parent)
+        {
+            List<DestructibleObject> concentricObjects = new List<DestructibleObject>();
+            
+            if (concentricRings.Count == 0) return concentricObjects;
+            
+            // 同心円状オブジェクトのコンテナを作成
+            GameObject container = new GameObject("ConcentricDestructibles");
+            container.transform.SetParent(parent.transform, false);
+            
+            // 位置の重複を避けるためのリスト
+            List<Vector2> usedPositions = new List<Vector2>();
+            
+            // 各リングに対して処理
+            foreach (var ring in concentricRings)
+            {
+                if (ring.prefabs.Count == 0) continue;
+                
+                // オブジェクトの数を計算（円周に基づく）
+                float avgRadius = (ring.minRadius + ring.maxRadius) / 2f;
+                float circumference = 2f * Mathf.PI * avgRadius;
+                int objectCount = Mathf.Max(3, Mathf.RoundToInt(circumference * ring.density / 10f));
+                
+                for (int i = 0; i < objectCount; i++)
+                {
+                    // リングからランダムなプレハブを選択
+                    GameObject prefab = ring.prefabs[Random.Range(0, ring.prefabs.Count)];
+                    if (prefab == null) continue;
+                    
+                    // 円周上の角度（均等に分布）
+                    float angle = (i / (float)objectCount) * 360f;
+                    // 角度にランダム性を加える
+                    angle += Random.Range(-10f, 10f);
+                    
+                    // 半径にもランダム性を加える
+                    float radius = Random.Range(ring.minRadius, ring.maxRadius);
+                    
+                    // 極座標から直交座標に変換
+                    float radian = angle * Mathf.Deg2Rad;
+                    float x = Mathf.Cos(radian) * radius;
+                    float z = Mathf.Sin(radian) * radius;
+                    
+                    // 位置にランダムなオフセットを加える
+                    float randomOffsetX = Random.Range(-ring.randomOffset, ring.randomOffset) * radius;
+                    float randomOffsetZ = Random.Range(-ring.randomOffset, ring.randomOffset) * radius;
+                    
+                    Vector3 position = new Vector3(x + randomOffsetX, 0, z + randomOffsetZ);
+                    
+                    // 重複チェック
+                    Vector2 pos2D = new Vector2(position.x, position.z);
+                    bool tooClose = false;
+                    
+                    foreach (var usedPos in usedPositions)
+                    {
+                        if (Vector2.Distance(pos2D, usedPos) < 2f)
+                        {
+                            tooClose = true;
+                            break;
+                        }
+                    }
+                    
+                    if (tooClose) continue;
+                    
+                    // プレハブをインスタンス化
+                    GameObject obj = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+                    obj.name = $"Concentric_Destructible_{ring.minRadius:F1}_{angle:F1}";
+                    obj.transform.SetParent(container.transform);
+                    
+                    // 位置と回転を設定
+                    obj.transform.position = position;
+                    
+                    // Y位置を調整（プレファブのサイズに基づいて）
+                    Renderer renderer = obj.GetComponent<Renderer>();
+                    if (renderer != null)
+                    {
+                        float yOffset = renderer.bounds.extents.y;
+                        obj.transform.position = new Vector3(
+                            position.x,
+                            yOffset,
+                            position.z
+                        );
+                    }
+                    
+                    // ランダムな回転を適用
+                    obj.transform.rotation = Quaternion.Euler(0, Random.Range(0, 360), 0);
+                    
+                    // DestructibleObjectコンポーネントをセットアップ
+                    DestructibleObject destructible = SetupDestructibleComponents(obj, -1); // ゾーンレベル-1はステージ全体のオブジェクト
+                    concentricObjects.Add(destructible);
+                    
+                    // 使用済み位置を記録
+                    usedPositions.Add(pos2D);
+                }
+            }
+            
+            return concentricObjects;
+        }
+
+        // 同心円状オブジェクトを各ゾーンに割り当てる
+        private void AssignConcentricObjectsToZones(List<DestructibleObject> concentricObjects, List<ZoneController> zoneControllers)
+        {
+            if (concentricObjects == null || zoneControllers == null || 
+                concentricObjects.Count == 0 || zoneControllers.Count == 0)
+                return;
+            
+            foreach (var obj in concentricObjects)
+            {
+                if (obj == null) continue;
+                
+                // オブジェクトが属するゾーンを検索
+                foreach (var zoneController in zoneControllers)
+                {
+                    // オブジェクトがゾーンの台形範囲内にあるかチェック
+                    if (zoneController.IsPointInTrapezoid(obj.transform.position))
+                    {
+                        // ゾーンに同心円オブジェクトを追加
+                        zoneController.AddConcentricObject(obj);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // DestructibleObjectコンポーネントを設定し、参照を返す
+        public DestructibleObject SetupDestructibleComponents(GameObject destructible, int zoneIndex)
+        {
+            // DestructibleObjectコンポーネントの追加と設定
+            DestructibleObject objectModel = destructible.GetComponent<DestructibleObject>();
+            if (objectModel == null)
+            {
+                objectModel = destructible.AddComponent<DestructibleObject>();
+            }
+                        
+            // DestructibleObjectViewコンポーネントの追加と設定
+            DestructibleObjectView objectView = destructible.GetComponent<DestructibleObjectView>();
+            if (objectView == null)
+            {
+                objectView = destructible.AddComponent<DestructibleObjectView>();
+            }
+            
+            // Viewを初期化
+            objectView.Initialize(objectModel);
+            
+            return objectModel;
         }
 
         private void CreateGround(GameObject parent)
@@ -261,51 +612,6 @@ namespace HockeyEditor
             if (stageMaterial != null)
             {
                 ground.GetComponent<MeshRenderer>().material = stageMaterial;
-            }
-        }
-
-        private void CreateZones(GameObject parent)
-        {
-            if (zoneSettings == null)
-            {
-                Debug.LogError("Zone Settings is not assigned!");
-                return;
-            }
-
-            // 最初のゾーンを作成
-            GameObject firstZone = null;
-            float firstZoneBackZ = 0;
-            
-            for (int i = 0; i < zoneSettings.zones.Length; i++)
-            {
-                var zoneData = zoneSettings.zones[i];
-                if (zoneData == null) continue;
-
-                GameObject zone = new GameObject($"Zone_{i + 1}");
-                zone.transform.SetParent(parent.transform);
-
-                // ZoneControllerの追加と設定
-                ZoneController zoneController = zone.AddComponent<ZoneController>();
-                zoneController.ZoneSettings = zoneSettings;
-                zoneController.ZoneLevel = i + 1;
-                // 手前のゾーンのZ位置を基準にする（カメラの計算に利用する）
-                zoneController.Width = zoneData.frontWidth;
-                zoneController.Depth = zoneData.depth;
-
-                // ゾーン壁の作成
-                if (zoneData.wallHeight > 0)
-                {
-                    CreateZoneWall(zone, i, zoneData);
-                }
-
-                // 破壊可能オブジェクトの配置
-                CreateZoneDestructibles(zone, i);
-
-                // フォグエフェクトの作成
-                if (zoneData.enableFog && zoneSettings.defaultFogMaterial != null)
-                {
-                    CreateZoneFog(zone, i, zoneData);
-                }
             }
         }
 
@@ -584,26 +890,6 @@ namespace HockeyEditor
             float fallbackX = UnityEngine.Random.Range(-widthAtFallbackZ/2, widthAtFallbackZ/2);
             
             return new Vector3(fallbackX, 0, fallbackZ);
-        }
-
-        private void SetupDestructibleComponents(GameObject destructible, int zoneIndex)
-        {
-            // DestructibleObjectコンポーネントの追加と設定
-            DestructibleObject objectModel = destructible.GetComponent<DestructibleObject>();
-            if (objectModel == null)
-            {
-                objectModel = destructible.AddComponent<DestructibleObject>();
-            }
-                        
-            // DestructibleObjectViewコンポーネントの追加と設定
-            DestructibleObjectView objectView = destructible.GetComponent<DestructibleObjectView>();
-            if (objectView == null)
-            {
-                objectView = destructible.AddComponent<DestructibleObjectView>();
-            }
-            
-            // Viewを初期化
-            objectView.Initialize(objectModel);
         }
     }
 }
