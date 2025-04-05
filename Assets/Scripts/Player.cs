@@ -1,23 +1,24 @@
 using UnityEngine;
 using System;
+using Hockey.Data;
 
 public class Player : MonoBehaviour
 {
     [Header("Movement Settings")]
-    [SerializeField] private float mass = 2.0f;
-    [SerializeField] private float collisionForceMultiplier = 2.5f;
+    private float mass;
+    private float collisionForceMultiplier;
 
     [Header("Player Stats")]
-    [SerializeField] private int[] experienceThresholds = { 0, 100, 300, 600, 1000 }; // レベルアップに必要な経験値
-    [SerializeField] private float baseDamage = 100.0f;
-    [SerializeField] private float levelDamageMultiplier = 0.5f; // レベルごとのダメージ倍率の増加量
+    private int[] experienceThresholds;
+    private float baseDamage;
+    private float levelDamageMultiplier;
 
     [Header("Growth Settings")]
-    [SerializeField] private int growthStage = 1;
-    [SerializeField] private int maxGrowthStage = 3;
-    [SerializeField] private float[] stageScales = { 0.8f, 1.0f, 1.2f };
-    [SerializeField] private float[] stageMass = { 1.5f, 2.0f, 2.5f };
-    [SerializeField] private float[] stageCollisionForce = { 2.0f, 2.5f, 3.0f };
+    private int growthStage = 1;
+    private int maxGrowthStage;
+    private float[] stageScales;
+    private float[] stageMass;
+    private float[] stageCollisionForce;
 
     [Header("Skills")]
     [SerializeField] private MissileSkill missileSkill;
@@ -43,6 +44,18 @@ public class Player : MonoBehaviour
 
     private void Awake()
     {
+        PlayerData playerData = GameConfigRepository.Instance.PlayerConfig;
+
+        mass = playerData.mass;
+        collisionForceMultiplier = playerData.collisionForceMultiplier;
+        experienceThresholds = playerData.experienceThresholds;
+        baseDamage = playerData.baseDamage;
+        levelDamageMultiplier = playerData.levelDamageMultiplier;
+        maxGrowthStage = playerData.maxGrowthStage;
+        stageScales = playerData.stageScales;
+        stageMass = playerData.stageMass;
+        stageCollisionForce = playerData.stageCollisionForce;
+
         previousPosition = transform.position;
         rb = GetComponent<Rigidbody>();
         if (rb == null)
@@ -54,18 +67,15 @@ public class Player : MonoBehaviour
         playerCollider = GetComponent<Collider>();
         mainCamera = Camera.main;
 
-        // 初期状態では非表示かつ当たり判定無効
         SetActiveState(false);
 
-        // 物理設定
         rb.mass = mass;
         rb.useGravity = false;
-        rb.isKinematic = true; // 常にKinematicモードを有効にして外力の影響を受けないようにする
+        rb.isKinematic = true;
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezePositionY;
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
-        rb.interpolation = RigidbodyInterpolation.None; // 補間を無効化
+        rb.interpolation = RigidbodyInterpolation.None;
 
-        // 成長段階の初期設定を適用
         ApplyGrowthStageSettings(growthStage);
     }
 
@@ -87,7 +97,6 @@ public class Player : MonoBehaviour
         }
         if (rb != null)
         {
-            // 物理的な当たり判定も同時に有効/無効化
             rb.detectCollisions = active;
         }
     }
@@ -98,14 +107,12 @@ public class Player : MonoBehaviour
         position.y = transform.position.y;
         transform.position = position;
 
-        // 位置が変更された場合の速度を計算
         currentVelocity = (position - oldPosition) / Time.deltaTime;
         previousPosition = position;
     }
 
     public void MoveTo(Vector3 position)
     {
-        // 過去の座標と変化がなかったら処理をしない
         if (Vector3.Distance(previousPosition, position) < 0.01f)
         {
             return;
@@ -115,7 +122,6 @@ public class Player : MonoBehaviour
         position.y = transform.position.y;
         transform.position = position;
 
-        // 移動による速度を計算
         currentVelocity = (position - oldPosition) / Time.deltaTime;
         previousPosition = position;
 
@@ -127,38 +133,28 @@ public class Player : MonoBehaviour
         Puck puck = collision.gameObject.GetComponent<Puck>();
         if (puck != null)
         {
-            // 現在の速度から衝突力を計算
             Vector3 collisionForce = currentVelocity * collisionForceMultiplier * mass;
-
-            // パックに力を適用
             puck.ApplyForce(collisionForce);
         }
     }
 
-    // レベルに応じて破壊できるオブジェクトの最大レベルを返す
     public int GetBreakableObjectLevel()
     {
         return level;
     }
 
-    // 経験値を獲得してレベルアップをチェック
     public bool GainExperience(int exp)
     {
         bool didLevelUp = false;
         
-        // ゾーンのスコア倍率を経験値にも適用する
         if (currentZone != null)
         {
             exp = Mathf.RoundToInt(exp * currentZone.GetScoreMultiplier());
         }
         
-        // 経験値を加算
         experiencePoints += exp;
-        
-        // 現在のレベルで使用すべき変数を更新
         currentExperience = experiencePoints;
 
-        // レベルアップ判定
         while (level < experienceThresholds.Length && experiencePoints >= experienceThresholds[level])
         {
             level++;
@@ -170,7 +166,6 @@ public class Player : MonoBehaviour
         return didLevelUp;
     }
 
-    // 成長段階を更新する
     public void UpdateGrowthStage(int newStage)
     {
         if (newStage <= 0 || newStage > maxGrowthStage)
@@ -184,15 +179,12 @@ public class Player : MonoBehaviour
         }
     }
 
-    // 成長段階に応じた設定を適用する
     private void ApplyGrowthStageSettings(int stage)
     {
         int index = Mathf.Clamp(stage - 1, 0, stageScales.Length - 1);
 
-        // スケールの更新
         transform.localScale = new Vector3(stageScales[index], stageScales[index], stageScales[index]);
 
-        // 物理パラメータの更新
         mass = stageMass[index];
         collisionForceMultiplier = stageCollisionForce[index];
 
@@ -202,20 +194,16 @@ public class Player : MonoBehaviour
         }
     }
 
-    // レベルと成長段階をリセットする
     public void ResetGrowth()
     {
-        // レベルを1にリセット
         if (level != 1)
         {
             level = 1;
             OnLevelChanged?.Invoke(level);
         }
 
-        // 経験値をリセット
         experiencePoints = 0;
 
-        // 成長段階を1にリセット
         if (growthStage != 1)
         {
             UpdateGrowthStage(1);
@@ -224,7 +212,6 @@ public class Player : MonoBehaviour
 
     internal float GetDamageMultiplier()
     {
-        // 基本ダメージにレベルボーナスとゾーンボーナスを加算
         float levelBonus = (currentLevel - 1) * levelDamageMultiplier;
         float zoneMultiplier = (currentZone != null) ? currentZone.GetDamageMultiplier() : 1.0f;
 
@@ -238,33 +225,28 @@ public class Player : MonoBehaviour
         level = 1;
         experiencePoints = 0;
         
-        // ミサイルスキルの初期化
         InitializeSkills();
     }
 
     private void InitializeSkills()
     {
-        // シーンからパックを探す
         Puck puck = FindObjectOfType<Puck>();
         if (puck == null)
         {
             Debug.LogError("シーン内にPuckが見つかりません。ミサイルスキルが正常に動作しない可能性があります。");
         }
         
-        // ミサイルスキルがアタッチされていれば初期化する
         if (missileSkill != null)
         {
             missileSkill.Initialize(this, puck);
         }
         else
         {
-            // ミサイルスキルがアタッチされていない場合は、動的に追加
             MissileSkill skill = GetComponent<MissileSkill>();
             if (skill == null)
             {
                 skill = gameObject.AddComponent<MissileSkill>();
             }
-            // スキルを初期化
             skill.Initialize(this, puck);
         }
     }
@@ -273,7 +255,6 @@ public class Player : MonoBehaviour
     {
         currentZone = zone;
         
-        // ミサイルスキルにも現在のゾーンを設定
         if (missileSkill != null)
         {
             missileSkill.SetCurrentZone(zone);
@@ -290,10 +271,9 @@ public class Player : MonoBehaviour
 
     public void ResetPosition()
     {
-        // プレイヤーの初期位置にリセット
         if (currentZone != null)
         {
-            float z = -(currentZone.Depth / 2f) + 2f; // ゾーンの後方から少し前に配置
+            float z = -(currentZone.Depth / 2f) + 2f;
             transform.position = new Vector3(0f, transform.position.y, z);
         }
         else
