@@ -1,0 +1,103 @@
+using UnityEngine;
+using System.IO;
+
+namespace Hockey.Data
+{
+    public class GameConfigRepository : MonoBehaviour
+    {
+        private static GameConfigRepository _instance;
+        public static GameConfigRepository Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    GameObject go = new GameObject("GameConfigRepository");
+                    _instance = go.AddComponent<GameConfigRepository>();
+                    DontDestroyOnLoad(go);
+                }
+                return _instance;
+            }
+        }
+
+        // 各データ
+        public PlayerData PlayerConfig { get; private set; }
+        public PuckData PuckConfig { get; private set; }
+
+        private void Awake()
+        {
+            if (_instance != null && _instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            _instance = this;
+            DontDestroyOnLoad(gameObject);
+
+            // 設定データを読み込む
+            LoadAllConfigs();
+        }
+
+        // すべての設定を読み込む
+        public void LoadAllConfigs()
+        {
+            PlayerConfig = LoadConfig<PlayerData>("player_config.json");
+            PuckConfig = LoadConfig<PuckData>("puck_config.json");
+        }
+
+        // 型指定で設定を読み込む
+        private T LoadConfig<T>(string fileName) where T : new()
+        {
+            string filePath = Path.Combine(Application.streamingAssetsPath, fileName);
+            
+            if (File.Exists(filePath))
+            {
+                string jsonContent = File.ReadAllText(filePath);
+                T config = JsonUtility.FromJson<T>(jsonContent);
+                if (config != null)
+                {
+                    Debug.Log($"Successfully loaded {fileName}");
+                    return config;
+                }
+                else
+                {
+                    Debug.LogWarning($"Failed to parse {fileName}, using default settings");
+                    return new T();
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"{fileName} not found, using default settings");
+                
+                // デフォルト設定を生成して保存
+                T defaultConfig = new T();
+                SaveConfig(defaultConfig, fileName);
+                
+                return defaultConfig;
+            }
+        }
+
+        // 設定をJSONとして保存
+        private void SaveConfig<T>(T config, string fileName)
+        {
+            string directory = Application.streamingAssetsPath;
+            
+            if (!Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+            
+            string filePath = Path.Combine(directory, fileName);
+            string jsonContent = JsonUtility.ToJson(config, true);
+            File.WriteAllText(filePath, jsonContent);
+            
+            Debug.Log($"Created default {fileName}");
+        }
+
+        // 初期化
+        public void Initialize()
+        {
+            LoadAllConfigs();
+        }
+    }
+}

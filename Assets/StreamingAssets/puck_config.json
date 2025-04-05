@@ -1,0 +1,12 @@
+{
+  "mass": 1.0,
+  "frictionCoefficient": 0.995,
+  "airResistance": 0.998,
+  "minVelocityThreshold": 0.05,
+  "maxGrowthStage": 3,
+  "stageScales": [0.8, 1.0, 1.2],
+  "stageMass": [0.8, 1.0, 1.3],
+  "stageMaxSpeed": [15.0, 20.0, 25.0],
+  "stageMaxForce": [12.0, 16.0, 20.0],
+  "stageFriction": [0.993, 0.995, 0.997]
+}

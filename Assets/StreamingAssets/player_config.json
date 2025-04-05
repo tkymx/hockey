@@ -1,0 +1,11 @@
+{
+  "mass": 2.0,
+  "collisionForceMultiplier": 2.5,
+  "experienceThresholds": [0, 100, 300, 600, 1000],
+  "baseDamage": 100.0,
+  "levelDamageMultiplier": 0.5,
+  "maxGrowthStage": 3,
+  "stageScales": [0.8, 1.0, 1.2],
+  "stageMass": [1.5, 2.0, 2.5],
+  "stageCollisionForce": [2.0, 2.5, 3.0]
+}

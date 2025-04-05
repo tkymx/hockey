@@ -1,3 +1,4 @@
+using Hockey.Data;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -25,6 +26,9 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
+        // GameConfigRepositoryの初期化
+        GameConfigRepository.Instance.Initialize();
+
         Initialize();
     }
 
