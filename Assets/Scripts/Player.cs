@@ -21,7 +21,7 @@ public class Player : MonoBehaviour
     private float[] stageCollisionForce;
 
     [Header("Skills")]
-    private MissileSkill missileSkill;
+    [SerializeField] private MissileSkill missileSkill;
 
     private int level = 1;
     int experiencePoints = 0;
@@ -75,8 +75,6 @@ public class Player : MonoBehaviour
         rb.interpolation = RigidbodyInterpolation.None;
 
         ApplyGrowthStageSettings(growthStage);
-        
-        InitializeSkills();
     }
 
     private void Update()

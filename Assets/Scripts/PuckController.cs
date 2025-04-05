@@ -2,22 +2,19 @@ using UnityEngine;
 using Hockey.Data;
 using System.Collections.Generic;
 
-[RequireComponent(typeof(Puck))]
-[RequireComponent(typeof(PuckView))]
 public class PuckController : MonoBehaviour
 {
-    private Puck puck;
-    private PuckView puckView;
-
+    [SerializeField] private Puck puck;
+    [SerializeField] private PuckView puckView;
+    
+    private Vector3 initialPosition;
     public Puck Puck => puck;
 
     public void Initialize(GameConfigRepository gameConfigRepository)
     {
-        puck = GetComponent<Puck>();
-        puckView = GetComponent<PuckView>();
-        
         if (puck != null)
         {
+            initialPosition = puck.transform.position;
             puck.Initialize(gameConfigRepository.PuckConfig);
         }
         
@@ -42,11 +39,5 @@ public class PuckController : MonoBehaviour
 
         // 位置をリセット
         puck.transform.position = position;
-        
-        // エフェクトをリセット
-        if (puckView != null)
-        {
-            puckView.PlayTrailEffect(false);
-        }
     }
 }

@@ -50,11 +50,7 @@ public class GameManager : MonoBehaviour
             Debug.LogError("Required components are not assigned to GameManager!");
             return;
         }
-        
-        // PlayerManager と PuckController の初期化時にデータを渡す
-        playerManager.Initialize(gameConfigRepository);
-        puckController.Initialize(gameConfigRepository);
-        
+                
         // プレイヤーの取得
         Player player = playerManager.GetPlayer();
         
@@ -88,9 +84,11 @@ public class GameManager : MonoBehaviour
         // StageManagerの初期化
         stageManager.Initialize();
         stageManager.LoadStage();
-        
-        playerManager.Initialize(gameConfigRepository);
 
+        // PlayerManager と PuckController の初期化時にデータを渡す
+        playerManager.Initialize(gameConfigRepository);
+        puckController.Initialize(gameConfigRepository);
+        
         // スコアのリセット
         scoreManager.ResetScore();
         
@@ -171,6 +169,7 @@ public class GameManager : MonoBehaviour
 
         // PuckControllerが必要なコンポーネントを持っているか確認
         Puck puck = puckController.Puck;
+        
         if (puck == null)
         {
             Debug.LogError("PuckControllerにPuckコンポーネントがありません。");
