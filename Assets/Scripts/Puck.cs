@@ -1,22 +1,23 @@
 using UnityEngine;
 using System;
+using Hockey.Data;
 
 public class Puck : MonoBehaviour
 {
     [Header("Puck Properties")]
-    [SerializeField] private float mass = 1.0f;
-    [SerializeField] private float frictionCoefficient = 0.995f; // 摩擦をほぼなしに調整（0.95→0.995）
-    [SerializeField] private float airResistance = 0.998f; // 空気抵抗の追加
-    [SerializeField] private float minVelocityThreshold = 0.05f; // これ以下の速度で停止と見なす
+    private float mass;
+    private float frictionCoefficient;
+    private float airResistance;
+    private float minVelocityThreshold;
 
     [Header("Growth Settings")]
-    [SerializeField] private int growthStage = 1;
-    [SerializeField] private int maxGrowthStage = 3;
-    [SerializeField] private float[] stageScales = { 0.8f, 1.0f, 1.2f };
-    [SerializeField] private float[] stageMass = { 0.8f, 1.0f, 1.3f };
-    [SerializeField] private float[] stageMaxSpeed = { 15.0f, 20.0f, 25.0f };
-    [SerializeField] private float[] stageMaxForce = { 12.0f, 16.0f, 20.0f }; // 各成長段階での最大外力
-    [SerializeField] private float[] stageFriction = { 0.993f, 0.995f, 0.997f }; // 全ての段階で摩擦を小さく設定
+    private int growthStage = 1;
+    private int maxGrowthStage;
+    private float[] stageScales;
+    private float[] stageMass;
+    private float[] stageMaxSpeed;
+    private float[] stageMaxForce;
+    private float[] stageFriction;
 
     public int GrowthStage => growthStage;
 
@@ -49,7 +50,20 @@ public class Puck : MonoBehaviour
 
         puckView = GetComponent<PuckView>();
 
+        PuckData puckData = GameConfigRepository.Instance.PuckConfig;
+
         // パックの物理設定
+        mass = puckData.mass;
+        frictionCoefficient = puckData.frictionCoefficient;
+        airResistance = puckData.airResistance;
+        minVelocityThreshold = puckData.minVelocityThreshold;
+        maxGrowthStage = puckData.maxGrowthStage;
+        stageScales = puckData.stageScales;
+        stageMass = puckData.stageMass;
+        stageMaxSpeed = puckData.stageMaxSpeed;
+        stageMaxForce = puckData.stageMaxForce;
+        stageFriction = puckData.stageFriction;
+
         rb.mass = mass;
         rb.linearDamping = 0; // ダンピングはなし
         rb.angularDamping = 0.05f; // 回転の減衰もわずかに
