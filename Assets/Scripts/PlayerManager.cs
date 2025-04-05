@@ -1,13 +1,17 @@
 using UnityEngine;
+using Hockey.Data;
 
 public class PlayerManager : MonoBehaviour
 {
     [SerializeField] private Player playerPrefab;
     
     private Player currentPlayer;
+    private PlayerData playerData;
     
-    public void Initialize()
+    public void Initialize(GameConfigRepository gameConfigRepository)
     {
+        this.playerData = gameConfigRepository.PlayerConfig;
+        
         if (currentPlayer == null)
         {
             // Default spawn position if not specified elsewhere
@@ -16,14 +20,15 @@ public class PlayerManager : MonoBehaviour
         else
         {
             // 既存のプレイヤーを初期化
-            currentPlayer.Initialize();
+            currentPlayer.Initialize(this.playerData);
         }
     }
     
     public void SpawnPlayer(Vector3 position)
     {
         currentPlayer = Instantiate(playerPrefab, position, Quaternion.identity);
-        currentPlayer.Initialize();
+        currentPlayer.Initialize(this.playerData);
+        currentPlayer.name = "Player";
     }
     
     public Player GetPlayer()

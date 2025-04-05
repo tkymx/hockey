@@ -49,9 +49,10 @@ public class Puck : MonoBehaviour
         }
 
         puckView = GetComponent<PuckView>();
+    }
 
-        PuckData puckData = GameConfigRepository.Instance.PuckConfig;
-
+    public void Initialize(PuckData puckData)
+    {
         // パックの物理設定
         mass = puckData.mass;
         frictionCoefficient = puckData.frictionCoefficient;

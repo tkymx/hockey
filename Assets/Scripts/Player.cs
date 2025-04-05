@@ -21,7 +21,7 @@ public class Player : MonoBehaviour
     private float[] stageCollisionForce;
 
     [Header("Skills")]
-    [SerializeField] private MissileSkill missileSkill;
+    private MissileSkill missileSkill;
 
     private int level = 1;
     int experiencePoints = 0;
@@ -42,10 +42,8 @@ public class Player : MonoBehaviour
     private Collider playerCollider;
     private Camera mainCamera;
 
-    private void Awake()
+    public void Initialize(PlayerData playerData)
     {
-        PlayerData playerData = GameConfigRepository.Instance.PlayerConfig;
-
         mass = playerData.mass;
         collisionForceMultiplier = playerData.collisionForceMultiplier;
         experienceThresholds = playerData.experienceThresholds;
@@ -77,6 +75,8 @@ public class Player : MonoBehaviour
         rb.interpolation = RigidbodyInterpolation.None;
 
         ApplyGrowthStageSettings(growthStage);
+        
+        InitializeSkills();
     }
 
     private void Update()
@@ -216,16 +216,6 @@ public class Player : MonoBehaviour
         float zoneMultiplier = (currentZone != null) ? currentZone.GetDamageMultiplier() : 1.0f;
 
         return (baseDamage + levelBonus) * zoneMultiplier;
-    }
-
-    public void Initialize()
-    {
-        currentLevel = 1;
-        currentExperience = 0;
-        level = 1;
-        experiencePoints = 0;
-        
-        InitializeSkills();
     }
 
     private void InitializeSkills()

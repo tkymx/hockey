@@ -5,35 +5,12 @@ namespace Hockey.Data
 {
     public class GameConfigRepository : MonoBehaviour
     {
-        private static GameConfigRepository _instance;
-        public static GameConfigRepository Instance
-        {
-            get
-            {
-                if (_instance == null)
-                {
-                    GameObject go = new GameObject("GameConfigRepository");
-                    _instance = go.AddComponent<GameConfigRepository>();
-                    DontDestroyOnLoad(go);
-                }
-                return _instance;
-            }
-        }
-
         // 各データ
         public PlayerData PlayerConfig { get; private set; }
         public PuckData PuckConfig { get; private set; }
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            _instance = this;
-            DontDestroyOnLoad(gameObject);
-
             // 設定データを読み込む
             LoadAllConfigs();
         }
@@ -92,12 +69,6 @@ namespace Hockey.Data
             File.WriteAllText(filePath, jsonContent);
             
             Debug.Log($"Created default {fileName}");
-        }
-
-        // 初期化
-        public void Initialize()
-        {
-            LoadAllConfigs();
         }
     }
 }
