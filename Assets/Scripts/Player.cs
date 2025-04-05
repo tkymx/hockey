@@ -75,6 +75,8 @@ public class Player : MonoBehaviour
         rb.interpolation = RigidbodyInterpolation.None;
 
         ApplyGrowthStageSettings(growthStage);
+
+        InitializeSkills();
     }
 
     private void Update()
