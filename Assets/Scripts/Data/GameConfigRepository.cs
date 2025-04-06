@@ -8,6 +8,7 @@ namespace Hockey.Data
         // 各データ
         public PlayerData PlayerConfig { get; private set; }
         public PuckData PuckConfig { get; private set; }
+        public GrowthData GrowthConfig { get; private set; } // 追加: 成長データ
 
         private void Awake()
         {
@@ -20,6 +21,7 @@ namespace Hockey.Data
         {
             PlayerConfig = LoadConfig<PlayerData>("player_config.json");
             PuckConfig = LoadConfig<PuckData>("puck_config.json");
+            GrowthConfig = LoadConfig<GrowthData>("growth_config.json"); // 追加: 成長設定ファイルの読み込み
         }
 
         // 型指定で設定を読み込む

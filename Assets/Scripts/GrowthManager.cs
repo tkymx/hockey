@@ -1,17 +1,30 @@
 using UnityEngine;
+using Hockey.Data;
 
 public class GrowthManager : MonoBehaviour
 {
     [Header("Growth Settings")]
-    [SerializeField] private int[] levelThresholdsForGrowth = { 1, 3, 5 }; // レベルに応じた成長段階の閾値
+    private int maxGrowthStage = 5; // デフォルト最大成長段階
 
     private PlayerManager playerManager;
     private PuckController puckController;
+    private GrowthData growthData;
 
-    public void Initialize(PlayerManager playerManagerRef, PuckController puckControllerRef)
+    public void Initialize(PlayerManager playerManagerRef, PuckController puckControllerRef, GameConfigRepository configRepository = null)
     {
         playerManager = playerManagerRef;
         puckController = puckControllerRef;
+
+        // GameConfigRepositoryから設定を読み込む
+        if (configRepository != null)
+        {
+            growthData = configRepository.GrowthConfig;
+            if (growthData != null)
+            {
+                maxGrowthStage = growthData.maxGrowthStage;
+                Debug.Log($"GrowthManager: 設定を読み込みました。最大成長段階: {maxGrowthStage}");
+            }
+        }
 
         // プレイヤーのレベル変更イベントを購読
         Player player = playerManager.GetPlayer();
@@ -34,20 +47,8 @@ public class GrowthManager : MonoBehaviour
     // レベルに応じて成長段階を決定し、PlayerとPuckに適用する
     public void UpdateGrowthStageBasedOnLevel(int level)
     {
-        // レベルから成長段階を計算
-        int newGrowthStage = 1; // デフォルトは段階1
-        
-        for (int i = 0; i < levelThresholdsForGrowth.Length; i++)
-        {
-            if (level >= levelThresholdsForGrowth[i])
-            {
-                newGrowthStage = i + 1;
-            }
-            else
-            {
-                break;
-            }
-        }
+        // レベルがそのまま成長段階になるように変更
+        int newGrowthStage = Mathf.Min(level, maxGrowthStage);
         
         // Playerの成長段階を更新
         if (playerManager != null)

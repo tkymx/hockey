@@ -62,7 +62,7 @@ public class GameManager : MonoBehaviour
         gameOverMenuView.OnRestartRequested.AddListener(RestartGame);
 
         // GrowthManagerの初期化
-        growthManager.Initialize(playerManager, puckController);
+        growthManager.Initialize(playerManager, puckController, gameConfigRepository);
 
         // プレイヤーのレベル変更イベントを購読
         if (player != null)
