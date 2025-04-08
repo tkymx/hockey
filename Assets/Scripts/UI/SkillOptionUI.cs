@@ -52,48 +52,6 @@ public class SkillOptionUI : MonoBehaviour
         SetupButton();
     }
     
-    // 現在のレベルも考慮してスキル情報を設定
-    public void SetupSkill(SkillData skill, int currentLevel)
-    {
-        currentSkill = skill;
-        
-        // スキル名の設定
-        if (skillNameText != null)
-        {
-            skillNameText.text = skill.skillName;
-        }
-        
-        // スキル説明の設定
-        if (skillDescriptionText != null)
-        {
-            string effectValueText = GetEffectValueText(skill);
-            skillDescriptionText.text = $"{skill.description}\n{effectValueText}";
-        }
-        
-        // スキルレベルの設定
-        if (skillLevelText != null)
-        {
-            int newLevel = currentLevel + 1;
-            if (newLevel <= skill.maxLevel)
-            {
-                skillLevelText.text = $"Lv.{newLevel}/{skill.maxLevel}";
-            }
-            else
-            {
-                skillLevelText.text = $"最大レベル";
-            }
-        }
-        
-        // スキルアイコンの設定
-        if (skillIcon != null)
-        {
-            SetSkillIcon(skill.skillType);
-        }
-        
-        // ボタンのクリックイベントを設定
-        SetupButton();
-    }
-    
     // ボタンのクリックイベントを設定
     private void SetupButton()
     {

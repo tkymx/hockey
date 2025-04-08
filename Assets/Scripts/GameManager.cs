@@ -15,6 +15,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GrowthManager growthManager;
     [SerializeField] private StageController stageController;
     [SerializeField] private PlayerSkillManager playerSkillManager;
+    [SerializeField] private GameConfigRepository gameConfigRepository;
     
     [Header("UI References")]
     [SerializeField] private GameHUDView gameHUDView;
@@ -25,18 +26,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private PuckController puckController;
     [SerializeField] private Transform puckSpawnPoint;
 
-    private GameConfigRepository gameConfigRepository;
-    
     private bool isGameActive = false;
-
-    private void Awake()
-    {
-        gameConfigRepository = GetComponent<GameConfigRepository>();
-        if (gameConfigRepository == null)
-        {
-            gameConfigRepository = gameObject.AddComponent<GameConfigRepository>();
-        }
-    }
 
     private void Start()
     {
@@ -48,17 +38,17 @@ public class GameManager : MonoBehaviour
         if (stageManager == null || playerManager == null || mouseInputController == null || 
             cameraController == null || scoreManager == null || timeManager == null ||
             gameHUDView == null || gameOverMenuView == null || growthManager == null ||
-            stageController == null)
+            stageController == null || puckController == null || gameConfigRepository == null)
         {
             Debug.LogError("Required components are not assigned to GameManager!");
             return;
         }
                 
+        StartGame();
+
         // プレイヤーの取得
         Player player = playerManager.GetPlayer();
         
-        StartGame();
-
         // イベントの登録
         timeManager.OnTimeChanged.AddListener(HandleTimeChanged);
         timeManager.OnTimeUp.AddListener(HandleGameOver);
@@ -103,6 +93,8 @@ public class GameManager : MonoBehaviour
 
     private void StartGame()
     {
+        gameConfigRepository.LoadAllConfigs();
+
         // StageManagerの初期化
         stageManager.Initialize();
         stageManager.LoadStage();
@@ -331,8 +323,6 @@ public class GameManager : MonoBehaviour
                 }
             }
         }
-        
-        Debug.Log($"破壊オブジェクト +{points}ポイント（ゾーン{zone.ZoneLevel}）");
     }
 
     // スキル選択UIを表示する

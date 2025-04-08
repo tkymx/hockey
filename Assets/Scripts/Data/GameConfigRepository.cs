@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.IO;
 using System.Collections.Generic;
+using System;
 
 namespace Hockey.Data
 {
@@ -11,12 +12,6 @@ namespace Hockey.Data
         public PuckData PuckConfig { get; private set; }
         public GrowthData GrowthConfig { get; private set; }
         public List<SkillData> Skills { get; private set; } // 追加: スキルデータリスト
-
-        private void Awake()
-        {
-            // 設定データを読み込む
-            LoadAllConfigs();
-        }
 
         // すべての設定を読み込む
         public void LoadAllConfigs()
@@ -75,18 +70,6 @@ namespace Hockey.Data
                     Skills = skillList.skills;
                     Debug.Log($"Successfully loaded {fileName}, found {Skills.Count} skills");
                 }
-                else
-                {
-                    Debug.LogWarning($"Failed to parse {fileName}, using default skills");
-                    Skills = CreateDefaultSkills();
-                    SaveSkills(fileName);
-                }
-            }
-            else
-            {
-                Debug.LogWarning($"{fileName} not found, using default skills");
-                Skills = CreateDefaultSkills();
-                SaveSkills(fileName);
             }
         }
 
@@ -137,44 +120,6 @@ namespace Hockey.Data
         {
             if (Skills == null) return new List<SkillData>();
             return Skills.FindAll(s => s.skillType == type);
-        }
-
-        // デフォルトのスキルリストを作成
-        private List<SkillData> CreateDefaultSkills()
-        {
-            List<SkillData> defaultSkills = new List<SkillData>();
-
-            // パックサイズアップスキル
-            defaultSkills.Add(new SkillData(
-                "puck_size_up",
-                "パックサイズアップ",
-                "パックのサイズが大きくなり、当たりやすくなります。",
-                SkillType.PuckSizeUp,
-                3,
-                new List<float> { 1.2f, 1.5f, 2.0f }  // 各レベルでのサイズ倍率
-            ));
-
-            // パック攻撃力アップスキル
-            defaultSkills.Add(new SkillData(
-                "puck_damage_up",
-                "パック攻撃力アップ",
-                "パックの攻撃力が上昇し、障害物を破壊しやすくなります。",
-                SkillType.PuckDamageUp,
-                3,
-                new List<float> { 1.3f, 1.7f, 2.2f }  // 各レベルでの攻撃力倍率
-            ));
-
-            // パック貫通スキル
-            defaultSkills.Add(new SkillData(
-                "puck_penetration",
-                "パック貫通",
-                "パックが倒せる敵を貫通して進みます。",
-                SkillType.PuckPenetration,
-                3,
-                new List<float> { 1f, 2f, 3f }  // 各レベルでの貫通可能数
-            ));
-
-            return defaultSkills;
         }
     }
 

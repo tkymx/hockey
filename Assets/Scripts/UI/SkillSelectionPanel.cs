@@ -14,7 +14,6 @@ public class SkillSelectionPanel : MonoBehaviour
     [SerializeField] private TextMeshProUGUI titleText;
     // Close button removed as per requirement
 
-    private List<GameObject> skillOptionInstances = new List<GameObject>();
     private GameManager gameManager;
     
     // スキル選択時のイベント
@@ -87,7 +86,6 @@ public class SkillSelectionPanel : MonoBehaviour
         
         // スキルオプションのインスタンス生成
         GameObject optionInstance = Instantiate(skillOptionPrefab, skillOptionsContainer);
-        skillOptionInstances.Add(optionInstance);
         
         // スキル情報の表示
         SkillOptionUI optionUI = optionInstance.GetComponent<SkillOptionUI>();
@@ -114,10 +112,10 @@ public class SkillSelectionPanel : MonoBehaviour
     // スキルオプションのクリア
     private void ClearSkillOptions()
     {
-        foreach (GameObject option in skillOptionInstances)
+        // skillOptionsContainer の子オブジェクトをすべて削除
+        foreach (Transform child in skillOptionsContainer)
         {
-            Destroy(option);
+            Destroy(child.gameObject);
         }
-        skillOptionInstances.Clear();
     }
 }
