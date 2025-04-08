@@ -202,12 +202,12 @@ public class Puck : MonoBehaviour
         }
     }
 
-    // トリガー領域に進入時（破壊可能オブジェクト用に保持）
+    // トリガー領域に進入時の処理を改善
     private void OnTriggerEnter(Collider other)
     {
         // DestructibleObjectとの衝突
         DestructibleObject destructible = other.GetComponent<DestructibleObject>();
-        if (destructible != null)
+        if (destructible != null && !destructible.IsDestroyed())
         {
             // 貫通スキル処理
             PuckSkillController skillController = GetComponent<PuckSkillController>();
@@ -216,34 +216,36 @@ public class Puck : MonoBehaviour
                 if (skillController.ProcessDestructibleCollision(destructible))
                 {
                     // 貫通した場合は反射しない
-                    if (penetratedObjects.Contains(other.gameObject))
+                    if (!penetratedObjects.Contains(other.gameObject))
                     {
-                        return;
+                        // リストに追加
+                        penetratedObjects.Add(other.gameObject);
                     }
-
-                    // リストに追加
-                    penetratedObjects.Add(other.gameObject);
+                    
+                    // ダメージを与える
+                    float impactForce = rb.linearVelocity.magnitude;
+                    float damageMultiplier = skillController != null ? skillController.GetDamageMultiplier() : 1.0f;
+                    destructible.TakeDamage(impactForce * damageMultiplier, lastHitPlayer?.gameObject);
+                    
                     return;
                 }
             }
 
             // 通常の破壊処理と反射
-            if (!destructible.IsDestroyed())
+            // ダメージを与える
+            float force = rb.linearVelocity.magnitude;
+            bool destroyed = destructible.Hit(force, lastHitPlayer);
+
+            // 反射処理
+            HandleReflection(other);
+
+            // 効果音やエフェクト
+            if (puckView != null)
             {
-                // ダメージを与える
-                float impactForce = rb.linearVelocity.magnitude;
-                bool destroyed = destructible.Hit(impactForce, lastHitPlayer);
-
-                // 反射処理
-                HandleReflection(other);
-
-                // 効果音やエフェクト
-                if (puckView != null)
-                {
-                    Vector3 contactPoint = other.ClosestPoint(transform.position);
-                    puckView.PlayHitEffect(contactPoint);
-                }
+                Vector3 contactPoint = other.ClosestPoint(transform.position);
+                puckView.PlayHitEffect(contactPoint);
             }
+            
             return;
         }
 

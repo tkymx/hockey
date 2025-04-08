@@ -141,31 +141,4 @@ public class DestructibleObject : MonoBehaviour
     {
         return currentHitPoints / maxHitPoints;
     }
-    
-    // OnCollisionEnterをOnTriggerEnterに変更
-    private void OnTriggerEnter(Collider other)
-    {
-        Puck puck = other.GetComponent<Puck>();
-        if (puck != null)
-        {
-            // パックの所有者（最後に触ったプレイヤー）を取得
-            Player player = puck.GetLastHitPlayer();
-            
-            // スキルコントローラーをチェック
-            PuckSkillController skillController = puck.GetComponent<PuckSkillController>();
-            if (skillController != null)
-            {
-                // スキルコントローラーに破壊可能オブジェクトの処理を任せる
-                if (skillController.ProcessDestructibleCollision(this))
-                {
-                    // 貫通処理が行われた場合は、ここでの衝突処理は終了
-                    return;
-                }
-            }
-            
-            // 通常の衝突処理
-            float impactForce = puck.GetVelocity().magnitude;
-            Hit(impactForce, player);
-        }
-    }
 }
