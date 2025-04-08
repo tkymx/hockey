@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 using Hockey.Data;
 
 public class Puck : MonoBehaviour
@@ -28,6 +29,9 @@ public class Puck : MonoBehaviour
     private SphereCollider sphereCollider;
     private PuckView puckView;
     private Player lastHitPlayer;
+
+    // 貫通関連
+    private List<GameObject> penetratedObjects = new List<GameObject>();
 
     public Rigidbody Rigidbody => rb;
 
@@ -160,6 +164,7 @@ public class Puck : MonoBehaviour
         transform.position = position;
         rb.linearVelocity = Vector3.zero;
         isMoving = false;
+        penetratedObjects.Clear();
     }
 
     public Player GetLastHitPlayer()
@@ -167,20 +172,118 @@ public class Puck : MonoBehaviour
         return lastHitPlayer;
     }
 
+    // プレイヤーとの物理衝突処理
     private void OnCollisionEnter(Collision collision)
     {
+        // プレイヤーとの衝突
         Player player = collision.gameObject.GetComponent<Player>();
         if (player != null)
         {
             lastHitPlayer = player;
+
+            // プレイヤーから押された方向に力を適用
+            Vector3 direction = transform.position - player.transform.position;
+            direction.y = 0;
+            direction.Normalize();
+
+            // 力を計算（プレイヤーの速度をベースに）
+            float playerSpeed = player.GetCurrentVelocity().magnitude;
+            Vector3 force = direction * playerSpeed * player.GetCollisionForceMultiplier() * player.GetMass();
+
+            // 力を適用
+            ApplyForce(force, player);
+
+            // 効果音やエフェクトの再生
+            if (puckView != null)
+            {
+                Vector3 contactPoint = collision.contacts[0].point;
+                puckView.PlayHitEffect(contactPoint);
+            }
         }
+    }
+
+    // トリガー領域に進入時（破壊可能オブジェクト用に保持）
+    private void OnTriggerEnter(Collider other)
+    {
+        // DestructibleObjectとの衝突
+        DestructibleObject destructible = other.GetComponent<DestructibleObject>();
+        if (destructible != null)
+        {
+            // 貫通スキル処理
+            PuckSkillController skillController = GetComponent<PuckSkillController>();
+            if (skillController != null)
+            {
+                if (skillController.ProcessDestructibleCollision(destructible))
+                {
+                    // 貫通した場合は反射しない
+                    if (penetratedObjects.Contains(other.gameObject))
+                    {
+                        return;
+                    }
+
+                    // リストに追加
+                    penetratedObjects.Add(other.gameObject);
+                    return;
+                }
+            }
+
+            // 通常の破壊処理と反射
+            if (!destructible.IsDestroyed())
+            {
+                // ダメージを与える
+                float impactForce = rb.linearVelocity.magnitude;
+                bool destroyed = destructible.Hit(impactForce, lastHitPlayer);
+
+                // 反射処理
+                HandleReflection(other);
+
+                // 効果音やエフェクト
+                if (puckView != null)
+                {
+                    Vector3 contactPoint = other.ClosestPoint(transform.position);
+                    puckView.PlayHitEffect(contactPoint);
+                }
+            }
+            return;
+        }
+
+        // その他の障害物との衝突（壁など）
+        HandleReflection(other);
 
         if (puckView != null)
         {
-            // 衝突点の位置でヒットエフェクトを再生
-            ContactPoint contact = collision.GetContact(0);
-            puckView.PlayHitEffect(contact.point);
+            Vector3 contactPoint = other.ClosestPoint(transform.position);
+            puckView.PlayHitEffect(contactPoint);
         }
+    }
+
+    // 物体からの反射を処理
+    private void HandleReflection(Collider other)
+    {
+        // 衝突点を取得
+        Vector3 contactPoint = other.ClosestPoint(transform.position);
+
+        // 反射方向を計算
+        Vector3 normal = (transform.position - contactPoint).normalized;
+        normal.y = 0; // Y軸方向の反射は無視
+
+        if (normal.magnitude < 0.01f)
+        {
+            // 法線ベクトルが不正な場合はランダムな方向に反射
+            normal = new Vector3(UnityEngine.Random.Range(-1f, 1f), 0, UnityEngine.Random.Range(-1f, 1f)).normalized;
+        }
+
+        // 入射ベクトル（現在の速度）
+        Vector3 incident = rb.linearVelocity.normalized;
+
+        // 反射ベクトルの計算 (R = I - 2 * N * dot(I, N))
+        Vector3 reflection = Vector3.Reflect(incident, normal);
+
+        // 反射後の速度計算（勢いは少し失われる）
+        float speed = rb.linearVelocity.magnitude * 0.9f; // 10%減衰
+
+        // 新しい速度を設定
+        rb.linearVelocity = reflection * speed;
     }
 
     // 成長段階を更新する
@@ -226,5 +329,11 @@ public class Puck : MonoBehaviour
         {
             UpdateGrowthStage(1);
         }
+    }
+
+    // 貫通オブジェクトリストをクリア
+    public void ClearPenetratedObjects()
+    {
+        penetratedObjects.Clear();
     }
 }

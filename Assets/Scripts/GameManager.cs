@@ -1,6 +1,7 @@
 using Hockey.Data;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using System.Collections.Generic;
 
 public class GameManager : MonoBehaviour
 {
@@ -13,10 +14,12 @@ public class GameManager : MonoBehaviour
     [SerializeField] private TimeManager timeManager;
     [SerializeField] private GrowthManager growthManager;
     [SerializeField] private StageController stageController;
+    [SerializeField] private PlayerSkillManager playerSkillManager;
     
     [Header("UI References")]
     [SerializeField] private GameHUDView gameHUDView;
     [SerializeField] private GameOverMenuView gameOverMenuView;
+    [SerializeField] private SkillSelectionPanel skillSelectionPanel;
     
     [Header("Game Elements")]
     [SerializeField] private PuckController puckController;
@@ -63,6 +66,25 @@ public class GameManager : MonoBehaviour
 
         // GrowthManagerの初期化
         growthManager.Initialize(playerManager, puckController, gameConfigRepository);
+
+
+        // スキル選択パネルの初期化
+        if (skillSelectionPanel != null)
+        {
+            skillSelectionPanel.Initialize(this);
+            skillSelectionPanel.OnSkillSelected += OnSkillSelected;
+        }
+        
+        // プレイヤースキルマネージャーの初期化
+        if (player != null)
+        {
+            playerSkillManager = player.GetComponent<PlayerSkillManager>();
+            if (playerSkillManager == null)
+            {
+                playerSkillManager = player.gameObject.AddComponent<PlayerSkillManager>();
+            }
+            playerSkillManager.Initialize(puckController, gameConfigRepository);
+        }
 
         // プレイヤーのレベル変更イベントを購読
         if (player != null)
@@ -264,12 +286,20 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // プレイヤーのレベルが変更された時のUIの更新処理のみ
+    // プレイヤーのレベルが変更された時の処理
     private void HandlePlayerLevelChanged(int newLevel)
     {
+        // UIの更新
         if (gameHUDView != null)
         {
             gameHUDView.UpdateLevel(newLevel);
+        }
+        
+        // レベルアップ時にスキル選択を要求
+        if (playerSkillManager != null)
+        {
+            var skills = playerSkillManager.GetRandomSkillOptions(3);
+            ShowSkillSelection(skills);            
         }
     }
 
@@ -305,6 +335,24 @@ public class GameManager : MonoBehaviour
         Debug.Log($"破壊オブジェクト +{points}ポイント（ゾーン{zone.ZoneLevel}）");
     }
 
+    // スキル選択UIを表示する
+    public void ShowSkillSelection(List<SkillData> skillOptions)
+    {
+        if (skillSelectionPanel != null)
+        {
+            skillSelectionPanel.ShowPanel(skillOptions);
+        }
+    }
+
+    // スキル選択時の処理
+    private void OnSkillSelected(string skillId)
+    {
+        if (playerSkillManager != null)
+        {
+            playerSkillManager.AcquireSkill(skillId);
+        }
+    }
+
     private void OnDestroy()
     {
         if (playerManager != null)
@@ -332,6 +380,12 @@ public class GameManager : MonoBehaviour
             stageController.OnZoneChanged -= HandleZoneChanged;
             stageController.OnAllZonesCleared -= HandleAllZonesCleared;
             stageController.OnObjectDestroyedInStage -= HandleObjectDestroyedInStage;
+        }
+        
+        // スキル選択パネルのイベント解除
+        if (skillSelectionPanel != null)
+        {
+            skillSelectionPanel.OnSkillSelected -= OnSkillSelected;
         }
     }
 }

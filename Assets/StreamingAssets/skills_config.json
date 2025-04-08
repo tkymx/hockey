@@ -1,0 +1,76 @@
+{
+  "skills": [
+    {
+      "skillId": "puck_size_small",
+      "skillName": "パックサイズアップ（小）",
+      "description": "パックのサイズを小さく増加させます",
+      "skillType": 0,
+      "maxLevel": 3,
+      "effectValues": [1.2, 1.4, 1.6]
+    },
+    {
+      "skillId": "puck_size_medium",
+      "skillName": "パックサイズアップ（中）",
+      "description": "パックのサイズを中程度に増加させます",
+      "skillType": 0,
+      "maxLevel": 3,
+      "effectValues": [1.5, 1.8, 2.1]
+    },
+    {
+      "skillId": "puck_size_large",
+      "skillName": "パックサイズアップ（大）",
+      "description": "パックのサイズを大きく増加させます",
+      "skillType": 0,
+      "maxLevel": 3,
+      "effectValues": [2.0, 2.5, 3.0]
+    },
+    {
+      "skillId": "puck_damage_minor",
+      "skillName": "パワーアップ（小）",
+      "description": "パックの攻撃力を少し上昇させます",
+      "skillType": 1,
+      "maxLevel": 3,
+      "effectValues": [1.2, 1.3, 1.5]
+    },
+    {
+      "skillId": "puck_damage_moderate",
+      "skillName": "パワーアップ（中）",
+      "description": "パックの攻撃力を中程度に上昇させます",
+      "skillType": 1,
+      "maxLevel": 3,
+      "effectValues": [1.5, 1.8, 2.1]
+    },
+    {
+      "skillId": "puck_damage_major",
+      "skillName": "パワーアップ（大）",
+      "description": "パックの攻撃力を大きく上昇させます",
+      "skillType": 1,
+      "maxLevel": 3,
+      "effectValues": [1.8, 2.2, 3.0]
+    },
+    {
+      "skillId": "puck_penetration_basic",
+      "skillName": "貫通（小）",
+      "description": "パックが障害物を少し貫通できるようになります",
+      "skillType": 2,
+      "maxLevel": 3,
+      "effectValues": [1, 2, 3]
+    },
+    {
+      "skillId": "puck_penetration_advanced",
+      "skillName": "貫通（中）",
+      "description": "パックが障害物をある程度貫通できるようになります",
+      "skillType": 2,
+      "maxLevel": 3,
+      "effectValues": [2, 3, 5]
+    },
+    {
+      "skillId": "puck_penetration_master",
+      "skillName": "貫通（大）",
+      "description": "パックが障害物を多く貫通できるようになります",
+      "skillType": 2,
+      "maxLevel": 3,
+      "effectValues": [3, 5, 8]
+    }
+  ]
+}

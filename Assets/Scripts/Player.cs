@@ -220,7 +220,8 @@ public class Player : MonoBehaviour
 
     private void InitializeSkills()
     {
-        Puck puck = FindObjectOfType<Puck>();
+        // 非推奨のFindObjectOfTypeを修正
+        Puck puck = FindFirstObjectByType<Puck>();
         if (puck == null)
         {
             Debug.LogError("シーン内にPuckが見つかりません。ミサイルスキルが正常に動作しない可能性があります。");
@@ -270,5 +271,23 @@ public class Player : MonoBehaviour
         {
             transform.position = new Vector3(0f, transform.position.y, -10f);
         }
+    }
+
+    // 現在の速度を取得するメソッド
+    public Vector3 GetCurrentVelocity()
+    {
+        return currentVelocity;
+    }
+    
+    // 質量を取得するメソッド
+    public float GetMass()
+    {
+        return mass;
+    }
+    
+    // 衝突力倍率を取得するメソッド
+    public float GetCollisionForceMultiplier()
+    {
+        return collisionForceMultiplier;
     }
 }

@@ -28,13 +28,21 @@ public class DestructibleObject : MonoBehaviour
                 BoxCollider boxCollider = gameObject.AddComponent<BoxCollider>();
                 boxCollider.center = renderer.bounds.center - transform.position;
                 boxCollider.size = renderer.bounds.size;
+                // トリガーに設定
+                boxCollider.isTrigger = true;
             }
             else
             {
                 // レンダラーがない場合はデフォルトサイズのBoxColliderを追加
-                gameObject.AddComponent<BoxCollider>();
+                BoxCollider boxCollider = gameObject.AddComponent<BoxCollider>();
+                boxCollider.isTrigger = true;
                 Debug.LogWarning($"レンダラーが見つからないため、デフォルトサイズのコライダーを追加しました: {gameObject.name}");
             }
+        }
+        else
+        {
+            // 既存のコライダーをトリガーに設定
+            collider.isTrigger = true;
         }
         
         Initialize();
@@ -50,6 +58,8 @@ public class DestructibleObject : MonoBehaviour
         if (collider != null)
         {
             collider.enabled = true;
+            // 確実にトリガーになるようにする
+            collider.isTrigger = true;
         }
         
         // レンダラーを有効化
@@ -60,27 +70,28 @@ public class DestructibleObject : MonoBehaviour
         }
     }
     
-    public void TakeDamage(float amount, GameObject source)
+    // 戻り値をboolに変更して、破壊されたかどうかを返すようにする
+    public bool TakeDamage(float amount, GameObject source = null)
     {
-        if (isDestroyed || amount <= 0) return;
+        if (isDestroyed || amount <= 0) return false;
         
         currentHitPoints -= amount;
         
         if (currentHitPoints <= 0)
         {
             DestroyObject(source);
+            return true; // オブジェクトが破壊されたことを返す
         }
+        
+        return false;
     }
     
-    public void Hit(float force, Player player)
+    public bool Hit(float force, Player player)
     {
-        if (isDestroyed) return;
+        if (isDestroyed) return false;
 
         float damage = force * (player != null ? player.GetDamageMultiplier() : 1.0f);
-        TakeDamage(damage, player ? player.gameObject : null);
-        
-        // 直接経験値を付与する処理を削除
-        // GameManagerのイベント処理に任せる
+        return TakeDamage(damage, player ? player.gameObject : null);
     }
     
     private void DestroyObject(GameObject source)
@@ -131,15 +142,29 @@ public class DestructibleObject : MonoBehaviour
         return currentHitPoints / maxHitPoints;
     }
     
-    private void OnCollisionEnter(Collision collision)
+    // OnCollisionEnterをOnTriggerEnterに変更
+    private void OnTriggerEnter(Collider other)
     {
-        if (collision.gameObject.GetComponent<Puck>() != null)
+        Puck puck = other.GetComponent<Puck>();
+        if (puck != null)
         {
             // パックの所有者（最後に触ったプレイヤー）を取得
-            Puck puck = collision.gameObject.GetComponent<Puck>();
             Player player = puck.GetLastHitPlayer();
             
-            float impactForce = collision.relativeVelocity.magnitude;
+            // スキルコントローラーをチェック
+            PuckSkillController skillController = puck.GetComponent<PuckSkillController>();
+            if (skillController != null)
+            {
+                // スキルコントローラーに破壊可能オブジェクトの処理を任せる
+                if (skillController.ProcessDestructibleCollision(this))
+                {
+                    // 貫通処理が行われた場合は、ここでの衝突処理は終了
+                    return;
+                }
+            }
+            
+            // 通常の衝突処理
+            float impactForce = puck.GetVelocity().magnitude;
             Hit(impactForce, player);
         }
     }
