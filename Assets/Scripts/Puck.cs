@@ -38,6 +38,9 @@ public class Puck : MonoBehaviour
     private Func<float> maxSpeed = null;
     private Func<float> maxForce = null;
 
+    // 成長段階に対応する基本スケール値を保持
+    private Vector3 currentBaseScale;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -309,7 +312,16 @@ public class Puck : MonoBehaviour
 
         // スケールの更新
         float scale = stageScales[index];
-        transform.localScale = new Vector3(scale, transform.localScale.y, scale);
+        // 現在の基本スケールを保存
+        currentBaseScale = new Vector3(scale, transform.localScale.y, scale);
+
+        // スキルコントローラーが既に存在する場合は、スキルコントローラーに任せる
+        PuckSkillController skillController = GetComponent<PuckSkillController>();
+        if (skillController == null)
+        {
+            // スキルコントローラーがない場合は直接スケールを適用
+            transform.localScale = currentBaseScale;
+        }
 
         // 物理パラメータの更新
         mass = stageMass[index];
@@ -321,6 +333,12 @@ public class Puck : MonoBehaviour
         {
             rb.mass = mass;
         }
+    }
+
+    // 現在の成長段階における基本スケールを取得
+    public Vector3 GetCurrentBaseScale()
+    {
+        return currentBaseScale;
     }
 
     // 成長段階をリセットするメソッド

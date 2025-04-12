@@ -35,6 +35,21 @@ public class PuckSkillController : MonoBehaviour
         
         // エフェクトマネージャーを取得
         FindEffectManager();
+        
+        // パックの成長段階変更イベントを購読
+        if (this.puck != null)
+        {
+            this.puck.OnGrowthStageChanged += HandlePuckGrowthStageChanged;
+        }
+    }
+    
+    /// <summary>
+    /// パックの成長段階が変更された時の処理
+    /// </summary>
+    private void HandlePuckGrowthStageChanged(int newStage)
+    {
+        // 成長段階が変更されたらサイズ効果を再適用（スキル効果を維持する）
+        ApplySizeEffect();
     }
     
     /// <summary>
@@ -181,7 +196,28 @@ public class PuckSkillController : MonoBehaviour
     /// </summary>
     private void ApplySizeEffect()
     {
-        transform.localScale = originalScale * sizeMultiplier;
+        // パックの現在のベースサイズを取得し、それにスキル倍率を適用する
+        if (puck != null)
+        {
+            // 注：パックが現在使用している成長段階のサイズを取得
+            Vector3 currentGrowthScale = puck.GetCurrentBaseScale();
+            
+            // 現在の成長段階サイズにスキル効果を掛け合わせる
+            transform.localScale = new Vector3(
+                currentGrowthScale.x * sizeMultiplier,
+                currentGrowthScale.y, // 高さはそのまま
+                currentGrowthScale.z * sizeMultiplier
+            );
+        }
+        else
+        {
+            // パックが見つからない場合は、元のスケールとスキル効果のみを適用
+            transform.localScale = new Vector3(
+                originalScale.x * sizeMultiplier,
+                originalScale.y,
+                originalScale.z * sizeMultiplier
+            );
+        }
     }
     
     /// <summary>
@@ -231,5 +267,14 @@ public class PuckSkillController : MonoBehaviour
     public int GetPenetrationCount()
     {
         return penetrationCount;
+    }
+    
+    private void OnDestroy()
+    {
+        // イベント購読を解除
+        if (puck != null)
+        {
+            puck.OnGrowthStageChanged -= HandlePuckGrowthStageChanged;
+        }
     }
 }
