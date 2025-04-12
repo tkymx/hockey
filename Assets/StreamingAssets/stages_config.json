@@ -6,7 +6,7 @@
       "groundMaterialPath": "",
       "zones": [
         {
-          "frontWidth": 20,
+          "frontWidth": 15,
           "backWidth": 40,
           "depth": 60,
           "playerAreaDepth": 5,
@@ -22,9 +22,9 @@
           "destructiblesCount": 8
         },
         {
-          "frontWidth": 20,
-          "backWidth": 40,
-          "depth": 60,
+          "frontWidth": 30,
+          "backWidth": 80,
+          "depth": 120,
           "playerAreaDepth": 5,
           "wall": {
             "height": 3,
