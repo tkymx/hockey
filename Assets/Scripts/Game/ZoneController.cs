@@ -1,14 +1,14 @@
 using System;
 using UnityEngine;
 using System.Collections.Generic;
+using Hockey.Data;
 
 public class ZoneController : MonoBehaviour
 {
-    [Header("Zone Settings")]
-    [SerializeField] private ZoneSettings zoneSettings;
-    [SerializeField] private int zoneLevel = 0;
-    [SerializeField] private float width;
-    [SerializeField] private float depth;
+    private int zoneLevel = 0;
+    private float frontWidth;
+    private float backWidth;
+    private float depth;
 
     private bool isActive = false;
     private bool isCleared = false;
@@ -24,14 +24,13 @@ public class ZoneController : MonoBehaviour
     public event Action<ZoneController, DestructibleObject, int> OnObjectDestroyedInZone;
 
     public int ZoneLevel { get => zoneLevel; set => zoneLevel = value; }
-    public bool IsCurrentZone { get => isCurrentZone; set => isCurrentZone = value; }
-    public float Width { get => width; set => width = value; }
+    public float FrontWidth { get => frontWidth; set => frontWidth = value; }
+    public float BackWidth { get => backWidth; set => backWidth = value; }
     public float Depth { get => depth; set => depth = value; }
-    public int RemainingDestructibles { get => remainingDestructibles; }
-    public ZoneSettings ZoneSettings { get => zoneSettings; set => zoneSettings = value; }
 
     // ZoneDataの参照を保持
-    private ZoneSettings.ZoneData zoneData;
+    private ZoneData zoneData;
+    public ZoneData ZoneData { get => zoneData; set => zoneData = value; }
 
     public void Initialize()
     {
@@ -56,16 +55,6 @@ public class ZoneController : MonoBehaviour
             }
         }
 
-        // ZoneSettingsからZoneDataを取得
-        if (zoneSettings != null && zoneLevel < zoneSettings.zones.Length)
-        {
-            zoneData = zoneSettings.zones[zoneLevel];
-        }
-        else
-        {
-            Debug.LogWarning($"ZoneSettings for zone level {zoneLevel} is not available.");
-        }
-
         // ゾーン内の破壊可能オブジェクトを集計
         CountDestructibles();
 
@@ -79,19 +68,13 @@ public class ZoneController : MonoBehaviour
     // 点がゾーンの台形範囲内にあるかどうかを判定（StageCreator側で使用）
     public bool IsPointInTrapezoid(Vector3 point)
     {
-        if (zoneSettings == null || zoneLevel >= zoneSettings.zones.Length)
-            return false;
-            
-        var zoneData = zoneSettings.zones[zoneLevel];
         if (zoneData == null) return false;
 
         // ゾーンの境界を取得
         float halfDepth = zoneData.depth / 2;
-        float halfFrontWidth = zoneData.frontWidth / 2;
-        float halfBackWidth = zoneData.backWidth / 2;
         
         // Z座標がゾーンの範囲内かチェック
-        if (point.z < -halfDepth || point.z > halfDepth)
+        if (Mathf.Abs(point.z) > halfDepth)
             return false;
             
         // Z位置の正規化値（0～1）
@@ -257,12 +240,14 @@ public class ZoneController : MonoBehaviour
 
     public float GetDamageMultiplier()
     {
-        return zoneData != null ? zoneData.damageMultiplier : 1.0f;
+        // TODO: ゾーンデータからダメージ倍率を取得する
+        return 1.0f;
     }
 
     public float GetScoreMultiplier()
     {
-        return zoneData != null ? zoneData.scoreMultiplier : 1.0f;
+        // TODO: ゾーンデータからスコア倍率を取得する
+        return 1.0f;
     }
 
     // ターゲット可能な破壊可能オブジェクトを取得するメソッド

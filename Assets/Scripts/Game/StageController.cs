@@ -138,7 +138,7 @@ public class StageController : MonoBehaviour
     {
         if (currentZone != null)
         {
-            return new Vector3(currentZone.Width, 0, currentZone.Depth);
+            return new Vector3(Mathf.Max(currentZone.FrontWidth, currentZone.BackWidth), 0, currentZone.Depth);
         }
         return Vector3.zero;
     }

@@ -69,7 +69,7 @@ public class PuckSkillController : MonoBehaviour
         // まだ見つからなければ、シーン内から検索
         if (effectManager == null)
         {
-            effectManager = FindObjectOfType<ParticleEffectManager>();
+            effectManager = FindAnyObjectByType<ParticleEffectManager>();
         }
         
         // 見つかったら初期化

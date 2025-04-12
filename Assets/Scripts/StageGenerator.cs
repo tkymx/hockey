@@ -22,7 +22,7 @@ public class StageGenerator : MonoBehaviour
     {
         if (configRepository == null)
         {
-            configRepository = FindObjectOfType<GameConfigRepository>();
+            configRepository = FindAnyObjectByType<GameConfigRepository>();
         }
 
         if (stageParent == null)
@@ -99,32 +99,6 @@ public class StageGenerator : MonoBehaviour
         return currentStage;
     }
 
-    // 下位互換性のためのメソッド（名前を使用するオーバーロード）
-    public GameObject GenerateStage(string stageName = null)
-    {
-        // 既存のステージを破棄
-        if (currentStage != null)
-        {
-            Destroy(currentStage);
-            currentStage = null;
-        }
-
-        // ステージデータの取得
-        if (string.IsNullOrEmpty(stageName))
-        {
-            return GenerateStageById(defaultStageId);
-        }
-
-        currentStageData = configRepository.GetStageByName(stageName);
-        if (currentStageData == null)
-        {
-            Debug.LogWarning($"Stage '{stageName}' not found. Using default stage.");
-            return GenerateStageById(defaultStageId);
-        }
-
-        return GenerateStageById(currentStageData.stageId);
-    }
-
     private void CreateGround(GameObject parent)
     {
         GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -192,8 +166,10 @@ public class StageGenerator : MonoBehaviour
             // ZoneControllerの追加と設定
             ZoneController zoneController = zone.AddComponent<ZoneController>();
             zoneController.ZoneLevel = i;
-            zoneController.Width = zoneData.frontWidth;
+            zoneController.FrontWidth = zoneData.frontWidth;
+            zoneController.BackWidth = zoneData.backWidth;
             zoneController.Depth = zoneData.depth;
+            zoneController.ZoneData = zoneData;
             
             zoneControllers.Add(zoneController);
 
