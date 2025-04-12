@@ -1087,6 +1087,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1379090166}
   - component: {fileID: 1379090165}
+  - component: {fileID: 1379090167}
   m_Layer: 0
   m_Name: StageManager
   m_TagString: Untagged
@@ -1106,7 +1107,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bde555de764cf431b9a8a037a4d50e26, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  stagePrefab: {fileID: 8776365056117761346, guid: 889571b22a6654de18b13b538e7143e6, type: 3}
+  stageGenerator: {fileID: 1379090167}
+  defaultStageName: Default Stage
 --- !u!4 &1379090166
 Transform:
   m_ObjectHideFlags: 0
@@ -1122,6 +1124,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2050831257}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1379090167
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1379090164}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca22f460ed89f45ebb5458cca4c53464, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  configRepository: {fileID: 2019810352}
+  defaultStageName: Default Stage
+  stageParent: {fileID: 1379090166}
 --- !u!1 &1431591139
 GameObject:
   m_ObjectHideFlags: 0
@@ -1249,6 +1266,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   puck: {fileID: 38107689}
   puckView: {fileID: 38107688}
+  effectManager: {fileID: 0}
 --- !u!4 &1479409926
 Transform:
   m_ObjectHideFlags: 0

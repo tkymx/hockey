@@ -1,9 +1,12 @@
 using UnityEngine;
 using System;
+using Hockey.Data;
 
 public class StageManager : MonoBehaviour
 {
-    [SerializeField] private GameObject stagePrefab;
+    [SerializeField] private StageGenerator stageGenerator; // JSONベースの動的ステージ生成器
+    [SerializeField] private string defaultStageId = "stage_default"; // デフォルトステージのID
+    
     private GameObject currentStage;
     private Bounds stageBounds;
     
@@ -11,25 +14,36 @@ public class StageManager : MonoBehaviour
 
     public void Initialize()
     {
-        if (stagePrefab == null)
+        if (stageGenerator == null)
         {
-            Debug.LogError("Stage prefab is not assigned!");
-            return;
+            // StageGeneratorが指定されていない場合は子オブジェクトとして作成
+            GameObject generatorObj = new GameObject("StageGenerator");
+            generatorObj.transform.SetParent(transform);
+            stageGenerator = generatorObj.AddComponent<StageGenerator>();
         }
+        
+        // StageGenerator初期化
+        stageGenerator.Initialize();
     }
 
-    public void LoadStage()
+    public void LoadStage(string stageId = null)
     {
         if (currentStage != null)
         {
             Destroy(currentStage);
         }
 
-        currentStage = Instantiate(stagePrefab);
-        CalculateStageBounds();
-        
-        // ステージロードイベントを発行
-        OnStageLoaded?.Invoke(currentStage);
+        // 動的生成方式を使用
+        currentStage = stageGenerator.GenerateStageById(stageId ?? defaultStageId);
+
+        if (currentStage != null)
+        {
+            // ステージの境界を計算
+            CalculateStageBounds();
+            
+            // ステージロードイベントを発行（外部クラスに通知）
+            OnStageLoaded?.Invoke(currentStage);
+        }
     }
 
     private void CalculateStageBounds()

@@ -28,6 +28,9 @@ public class PlayerSkillManager : MonoBehaviour
     private Player player;
     private Puck puck;
     
+    // スキル獲得イベント
+    public event Action<SkillType, int> OnSkillAcquired;
+    
     public void Initialize(PuckController puckController, GameConfigRepository repository)
     {
         configRepository = repository;
@@ -97,6 +100,9 @@ public class PlayerSkillManager : MonoBehaviour
         SkillData selectedSkill = configRepository.GetSkillById(skillId);
         if (selectedSkill == null) return;
 
+        bool isNewSkill = false;
+        int newLevel = 1;
+        
         // すでに持っているスキルかチェック
         PlayerSkill existingSkill = acquiredSkills.Find(s => s.skillId == skillId);
         if (existingSkill != null)
@@ -105,16 +111,38 @@ public class PlayerSkillManager : MonoBehaviour
             if (existingSkill.level < selectedSkill.maxLevel)
             {
                 existingSkill.level++;
+                newLevel = existingSkill.level;
                 ApplySkillEffects(selectedSkill, existingSkill.level);
             }
         }
         else
         {
             // 新規スキル獲得
+            isNewSkill = true;
             PlayerSkill newSkill = new PlayerSkill(skillId);
             acquiredSkills.Add(newSkill);
             ApplySkillEffects(selectedSkill, newSkill.level);
         }
+        
+        // スキル獲得イベントを発行
+        OnSkillAcquired?.Invoke(selectedSkill.skillType, newLevel);
+        
+        // スキル獲得エフェクトを表示
+        PlaySkillAcquisitionEffect(selectedSkill.skillType, isNewSkill);
+        
+        Debug.Log($"スキルを獲得しました: {selectedSkill.skillName} (Lv.{newLevel}) - {(isNewSkill ? "新規" : "レベルアップ")}");
+    }
+    
+    // スキル獲得エフェクトの再生
+    private void PlaySkillAcquisitionEffect(SkillType skillType, bool isNewSkill)
+    {
+        if (puck == null) return;
+        
+        PuckSkillController skillController = puck.GetComponent<PuckSkillController>();
+        if (skillController == null) return;
+        
+        // 特定のスキルタイプに対応するエフェクトを明示的に再生
+        skillController.PlayEffectForSkillType(skillType);
     }
     
     // 特定のスキルを削除する

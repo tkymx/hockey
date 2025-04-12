@@ -6,6 +6,7 @@ public class PuckController : MonoBehaviour
 {
     [SerializeField] private Puck puck;
     [SerializeField] private PuckView puckView;
+    [SerializeField] private ParticleEffectManager effectManager;
     
     private Vector3 initialPosition;
     public Puck Puck => puck;
@@ -21,6 +22,35 @@ public class PuckController : MonoBehaviour
         if (puckView != null)
         {
             puckView.Initialize(puck);
+        }
+        
+        // エフェクトマネージャーの初期化
+        InitializeEffectManager();
+    }
+    
+    // エフェクトマネージャーの初期化
+    private void InitializeEffectManager()
+    {
+        // シリアライズフィールドにアサインされていなければ探索
+        if (effectManager == null)
+        {
+            // 既に子オブジェクトに存在するか確認
+            effectManager = GetComponentInChildren<ParticleEffectManager>();
+            
+            // 存在しなければ新規作成
+            if (effectManager == null && puck != null)
+            {
+                GameObject effectObj = new GameObject("EffectManager");
+                effectObj.transform.SetParent(puck.transform);
+                effectObj.transform.localPosition = Vector3.zero;
+                effectManager = effectObj.AddComponent<ParticleEffectManager>();
+            }
+        }
+        
+        // 初期化
+        if (effectManager != null)
+        {
+            effectManager.Initialize();
         }
     }
             

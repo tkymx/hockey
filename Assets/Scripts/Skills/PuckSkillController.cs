@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Hockey.Data;
 
 /// <summary>
 /// パックに適用されるスキル効果を制御するクラス
@@ -20,6 +21,9 @@ public class PuckSkillController : MonoBehaviour
     // 貫通したオブジェクトを追跡
     private List<GameObject> penetratedObjects = new List<GameObject>();
     
+    // エフェクトマネージャーへの参照
+    private ParticleEffectManager effectManager;
+    
     /// <summary>
     /// 初期化処理
     /// </summary>
@@ -28,6 +32,36 @@ public class PuckSkillController : MonoBehaviour
         this.puck = puck;
         originalScale = transform.localScale;
         ResetAllSkills();
+        
+        // エフェクトマネージャーを取得
+        FindEffectManager();
+    }
+    
+    /// <summary>
+    /// エフェクトマネージャーを取得
+    /// </summary>
+    private void FindEffectManager()
+    {
+        // 子オブジェクトに ParticleEffectManager があるか確認
+        effectManager = GetComponentInChildren<ParticleEffectManager>();
+        
+        // なければ、親/同じヒエラルキー階層から検索
+        if (effectManager == null)
+        {
+            effectManager = transform.root.GetComponentInChildren<ParticleEffectManager>();
+        }
+        
+        // まだ見つからなければ、シーン内から検索
+        if (effectManager == null)
+        {
+            effectManager = FindObjectOfType<ParticleEffectManager>();
+        }
+        
+        // 見つかったら初期化
+        if (effectManager != null)
+        {
+            effectManager.Initialize();
+        }
     }
     
     /// <summary>
@@ -35,8 +69,15 @@ public class PuckSkillController : MonoBehaviour
     /// </summary>
     public void SetSizeMultiplier(float multiplier)
     {
+        float prevMultiplier = sizeMultiplier;
         sizeMultiplier = Mathf.Max(1.0f, multiplier);
         ApplySizeEffect();
+        
+        // 値が増加した場合のみエフェクトを再生
+        if (sizeMultiplier > prevMultiplier)
+        {
+            PlaySkillEffectForType(SkillType.PuckSizeUp);
+        }
     }
     
     /// <summary>
@@ -44,7 +85,14 @@ public class PuckSkillController : MonoBehaviour
     /// </summary>
     public void SetDamageMultiplier(float multiplier)
     {
+        float prevMultiplier = damageMultiplier;
         damageMultiplier = Mathf.Max(1.0f, multiplier);
+        
+        // 値が増加した場合のみエフェクトを再生
+        if (damageMultiplier > prevMultiplier)
+        {
+            PlaySkillEffectForType(SkillType.PuckDamageUp);
+        }
     }
     
     /// <summary>
@@ -52,7 +100,44 @@ public class PuckSkillController : MonoBehaviour
     /// </summary>
     public void SetPenetrationCount(int count)
     {
+        int prevCount = penetrationCount;
         penetrationCount = Mathf.Max(0, count);
+        
+        // 値が増加した場合のみエフェクトを再生
+        if (penetrationCount > prevCount)
+        {
+            PlaySkillEffectForType(SkillType.PuckPenetration);
+        }
+    }
+    
+    /// <summary>
+    /// 特定のスキルタイプのエフェクトを再生
+    /// </summary>
+    public void PlayEffectForSkillType(SkillType skillType)
+    {
+        PlaySkillEffectForType(skillType);
+    }
+    
+    /// <summary>
+    /// スキルエフェクトを再生
+    /// </summary>
+    private void PlaySkillEffectForType(SkillType skillType)
+    {
+        // エフェクトマネージャーがなければ検索
+        if (effectManager == null)
+        {
+            FindEffectManager();
+        }
+        
+        // エフェクトを再生
+        if (effectManager != null)
+        {
+            effectManager.PlayEffectForSkillType(skillType, transform.position);
+        }
+        else
+        {
+            Debug.LogWarning("ParticleEffectManagerが見つかりません。スキルエフェクトを再生できません。");
+        }
     }
     
     /// <summary>

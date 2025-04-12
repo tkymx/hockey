@@ -1,0 +1,127 @@
+{
+  "stages": [
+    {
+      "stageId": "stage_basic",
+      "stageName": "基本ステージ",
+      "groundMaterialPath": "",
+      "zones": [
+        {
+          "frontWidth": 20,
+          "backWidth": 40,
+          "depth": 60,
+          "playerAreaDepth": 5,
+          "wall": {
+            "height": 3,
+            "thickness": 0.3,
+            "materialPath": ""
+          },
+          "destructiblePrefabPaths": [
+            "Assets/Resources/Prefabs/Object_In_1",
+            "Assets/Resources/Prefabs/Object_In_2"
+          ],
+          "destructiblesCount": 8
+        },
+        {
+          "frontWidth": 20,
+          "backWidth": 40,
+          "depth": 60,
+          "playerAreaDepth": 5,
+          "wall": {
+            "height": 3,
+            "thickness": 0.3,
+            "materialPath": ""
+          },
+          "destructiblePrefabPaths": [
+            "Assets/Resources/Prefabs/Object_In_2",
+            "Assets/Resources/Prefabs/Object_In_3"
+          ],
+          "destructiblesCount": 12
+        }
+      ],
+      "concentricRings": [
+        {
+          "minRadius": 5,
+          "maxRadius": 10,
+          "density": 5,
+          "randomOffset": 0.2,
+          "prefabPaths": [
+            "Assets/Resources/Prefabs/Object_1"
+          ]
+        },
+        {
+          "minRadius": 12,
+          "maxRadius": 18,
+          "density": 7,
+          "randomOffset": 0.3,
+          "prefabPaths": [
+            "Assets/Resources/Prefabs/Object_2"
+          ]
+        }
+      ]
+    },
+    {
+      "stageId": "stage_challenge",
+      "stageName": "チャレンジステージ",
+      "groundMaterialPath": "Assets/Resources/Materials/ChallengeGround",
+      "zones": [
+        {
+          "frontWidth": 18,
+          "backWidth": 30,
+          "depth": 25,
+          "playerAreaDepth": 4,
+          "wall": {
+            "height": 4,
+            "thickness": 0.4,
+            "materialPath": "Assets/Resources/Materials/ChallengeWall"
+          },
+          "destructiblePrefabPaths": [
+            "Assets/Resources/Prefabs/Destructibles/Box2",
+            "Assets/Resources/Prefabs/Destructibles/Barrel2",
+            "Assets/Resources/Prefabs/Destructibles/Rock2"
+          ],
+          "destructiblesCount": 15
+        },
+        {
+          "frontWidth": 25,
+          "backWidth": 40,
+          "depth": 35,
+          "playerAreaDepth": 4,
+          "wall": {
+            "height": 4,
+            "thickness": 0.4,
+            "materialPath": "Assets/Resources/Materials/ChallengeWall"
+          },
+          "destructiblePrefabPaths": [
+            "Assets/Resources/Prefabs/Destructibles/Box2",
+            "Assets/Resources/Prefabs/Destructibles/Barrel2",
+            "Assets/Resources/Prefabs/Destructibles/Rock2",
+            "Assets/Resources/Prefabs/Destructibles/Crystal1"
+          ],
+          "destructiblesCount": 20
+        }
+      ],
+      "concentricRings": [
+        {
+          "minRadius": 8,
+          "maxRadius": 15,
+          "density": 8,
+          "randomOffset": 0.25,
+          "prefabPaths": [
+            "Assets/Resources/Prefabs/Destructibles/Rock2",
+            "Assets/Resources/Prefabs/Destructibles/Crystal1"
+          ]
+        },
+        {
+          "minRadius": 18,
+          "maxRadius": 25,
+          "density": 10,
+          "randomOffset": 0.3,
+          "prefabPaths": [
+            "Assets/Resources/Prefabs/Destructibles/Box2",
+            "Assets/Resources/Prefabs/Destructibles/Crystal1"
+          ]
+        }
+      ]
+    }
+  ]
+}

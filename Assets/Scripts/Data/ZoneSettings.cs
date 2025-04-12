@@ -21,12 +21,6 @@ public class ZoneSettings : ScriptableObject
         public float wallThickness = 0.3f;
         public Material wallMaterial;
         
-        [Header("Fog Settings")]
-        public bool enableFog = true;
-        [Range(0f, 10f)]
-        public float fogHeight = 5f;
-        public Color fogColor = new Color(1f, 1f, 1f, 0.5f);
-        
         [Header("Destructible Objects")]
         public List<GameObject> destructiblePrefabs; // このゾーンで使用可能な破壊可能オブジェクトのプレファブ
         
@@ -42,7 +36,6 @@ public class ZoneSettings : ScriptableObject
 
     [Header("Global Settings")]
     public Material defaultWallMaterial;
-    public Material defaultFogMaterial;
     
     [Header("Zone Data")]
     public ZoneData[] zones = new ZoneData[5];
@@ -63,18 +56,12 @@ public class ZoneSettings : ScriptableObject
                     playerAreaDepth = 5f,
                     wallHeight = 3f,
                     wallThickness = 0.3f,
-                    fogHeight = 5f,
-                    fogColor = new Color(
-                        UnityEngine.Random.value,
-                        UnityEngine.Random.value,
-                        UnityEngine.Random.value,
-                        0.5f
-                    ),
                     damageMultiplier = 1f + (i * 0.2f), // レベルが上がるごとにダメージ倍率が増加
                     scoreMultiplier = 1f + (i * 0.5f)   // レベルが上がるごとにスコア倍率が増加
                 };
             }
         }
+
         // 値の範囲チェックと自動補正
         for (int i = 0; i < zones.Length; i++)
         {
