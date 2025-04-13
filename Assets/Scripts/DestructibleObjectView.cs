@@ -18,6 +18,12 @@ public class DestructibleObjectView : MonoBehaviour
         objectModel = destructibleObject;
         objectRenderer = GetComponent<Renderer>();
         
+        // UIキャンバス上にHPゲージを生成
+        if (HPBarManager.Instance != null)
+        {
+            HPBarManager.Instance.CreateHPBar(objectModel);
+        }
+
         // AudioSourceがなければ追加
         audioSource = GetComponent<AudioSource>();
         if (audioSource == null)
@@ -40,6 +46,7 @@ public class DestructibleObjectView : MonoBehaviour
         if (objectModel != null)
         {
             objectModel.OnObjectDestroyed += OnObjectDestroyed;
+            // HPBarManagerでHP変更イベントをハンドリングするため、こちらでは不要になった
         }
     }
     
@@ -49,6 +56,7 @@ public class DestructibleObjectView : MonoBehaviour
         if (objectModel != null)
         {
             objectModel.OnObjectDestroyed -= OnObjectDestroyed;
+            // HPBarManagerでHP変更イベントをハンドリングするため、こちらでは不要になった
         }
     }
     
@@ -58,7 +66,7 @@ public class DestructibleObjectView : MonoBehaviour
         PlayParticleEffect();
         PlayDestroySound();
     }
-    
+
     public void PlayDestroyAnimation()
     {
         if (objectRenderer == null) return;

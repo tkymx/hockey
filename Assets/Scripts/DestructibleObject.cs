@@ -4,7 +4,7 @@ using System;
 public class DestructibleObject : MonoBehaviour
 {
     [Header("Object Properties")]
-    [SerializeField] private float maxHitPoints = 100f;
+    [SerializeField] private float maxHitPoints = 300f;
     [SerializeField] private int pointValue = 100;
     [SerializeField] private GameObject explosionPrefab;
     
@@ -13,6 +13,9 @@ public class DestructibleObject : MonoBehaviour
     
     // オブジェクト破壊時のイベント（破壊されたオブジェクトとスコアポイントを通知）
     public event Action<DestructibleObject, int> OnObjectDestroyed;
+
+    // HP変更時のイベント
+    public event Action<float> OnHealthChanged;
 
     private void Awake()
     {
@@ -68,6 +71,9 @@ public class DestructibleObject : MonoBehaviour
         {
             renderer.enabled = true;
         }
+
+        // HP変更イベントを初期化
+        OnHealthChanged?.Invoke(currentHitPoints / maxHitPoints);
     }
     
     // 戻り値をboolに変更して、破壊されたかどうかを返すようにする
@@ -76,6 +82,9 @@ public class DestructibleObject : MonoBehaviour
         if (isDestroyed || amount <= 0) return false;
         
         currentHitPoints -= amount;
+
+        // HP変更イベントを発火
+        OnHealthChanged?.Invoke(currentHitPoints / maxHitPoints);
         
         if (currentHitPoints <= 0)
         {
@@ -90,7 +99,7 @@ public class DestructibleObject : MonoBehaviour
     {
         if (isDestroyed) return false;
 
-        float damage = force * (player != null ? player.GetDamageMultiplier() : 1.0f);
+        float damage = 100 * (player != null ? player.GetDamageMultiplier() : 1.0f);
         return TakeDamage(damage, player ? player.gameObject : null);
     }
     
@@ -140,5 +149,15 @@ public class DestructibleObject : MonoBehaviour
     public float GetHealthPercentage()
     {
         return currentHitPoints / maxHitPoints;
+    }
+
+    public float GetMaxHitPoints()
+    {
+        return maxHitPoints;
+    }
+
+    public float GetCurrentHitPoints()
+    {
+        return currentHitPoints;
     }
 }

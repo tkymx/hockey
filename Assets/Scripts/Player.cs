@@ -10,8 +10,7 @@ public class Player : MonoBehaviour
 
     [Header("Player Stats")]
     private int[] experienceThresholds;
-    private float baseDamage;
-    private float levelDamageMultiplier;
+    private float[] stageAttackPower;  // 成長段階ごとの攻撃力
 
     [Header("Growth Settings")]
     private int growthStage = 1;
@@ -47,8 +46,10 @@ public class Player : MonoBehaviour
         mass = playerData.mass;
         collisionForceMultiplier = playerData.collisionForceMultiplier;
         experienceThresholds = playerData.experienceThresholds;
-        baseDamage = playerData.baseDamage;
-        levelDamageMultiplier = playerData.levelDamageMultiplier;
+        
+        // 成長段階ごとの攻撃力のみを初期化
+        stageAttackPower = playerData.stageAttackPower;
+        
         maxGrowthStage = playerData.maxGrowthStage;
         stageScales = playerData.stageScales;
         stageMass = playerData.stageMass;
@@ -210,12 +211,58 @@ public class Player : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// ゾーンによるダメージ倍率のみを返す
+    /// </summary>
+    /// <returns>ゾーンによる倍率（ゾーンがない場合は1.0）</returns>
     internal float GetDamageMultiplier()
     {
-        float levelBonus = (currentLevel - 1) * levelDamageMultiplier;
-        float zoneMultiplier = (currentZone != null) ? currentZone.GetDamageMultiplier() : 1.0f;
-
-        return (baseDamage + levelBonus) * zoneMultiplier;
+        return (currentZone != null) ? currentZone.GetDamageMultiplier() : 1.0f;
+    }
+    
+    /// <summary>
+    /// 現在の攻撃力を取得する
+    /// </summary>
+    /// <returns>攻撃力の値</returns>
+    public float GetAttackPower()
+    {
+        // 成長段階に基づく攻撃力の取得
+        int index = Mathf.Clamp(growthStage - 1, 0, stageAttackPower.Length - 1);
+        float stageAttack = stageAttackPower[index];
+        
+        // ゾーン効果
+        float zoneMultiplier = GetDamageMultiplier();
+        
+        // レベルと成長段階のみに基づく攻撃力
+        return stageAttack * zoneMultiplier;
+    }
+    
+    /// <summary>
+    /// 攻撃力を計算する（スキル倍率適用）
+    /// </summary>
+    /// <param name="skillMultiplier">スキルによる倍率（デフォルト: 1.0）</param>
+    /// <returns>計算された攻撃力</returns>
+    public float GetAttackPowerMultiplied(float skillMultiplier = 1.0f)
+    {
+        // 基本攻撃力を取得
+        float baseAttack = GetAttackPower();
+        
+        // スキル倍率を適用
+        return baseAttack * skillMultiplier;
+    }
+    
+    /// <summary>
+    /// スキル効果を含む攻撃力を加算方式で取得
+    /// </summary>
+    /// <param name="additionalPower">スキルによる追加攻撃力</param>
+    /// <returns>計算された攻撃力</returns>
+    public float GetAttackPowerAdditive(float additionalPower = 0.0f)
+    {
+        // 基本攻撃力を取得
+        float baseAttack = GetAttackPower();
+        
+        // スキルによる追加攻撃力を加算
+        return baseAttack + additionalPower;
     }
 
     private void InitializeSkills()

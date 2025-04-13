@@ -224,20 +224,25 @@ public class Puck : MonoBehaviour
                         // リストに追加
                         penetratedObjects.Add(other.gameObject);
                     }
-                    
-                    // ダメージを与える
-                    float impactForce = rb.linearVelocity.magnitude;
+
+                    // ダメージを与える - 乗算方式の攻撃力を使用
                     float damageMultiplier = skillController != null ? skillController.GetDamageMultiplier() : 1.0f;
-                    destructible.TakeDamage(impactForce * damageMultiplier, lastHitPlayer?.gameObject);
-                    
+                    float attackPower = lastHitPlayer != null ? lastHitPlayer.GetAttackPowerMultiplied(damageMultiplier) : 100.0f;
+                    destructible.TakeDamage(attackPower, lastHitPlayer?.gameObject);
+
                     return;
                 }
             }
 
-            // 通常の破壊処理と反射
-            // ダメージを与える
-            float force = rb.linearVelocity.magnitude;
-            bool destroyed = destructible.Hit(force, lastHitPlayer);
+            // 貫通していない場合は通常の破壊処理
+            {
+                // 通常の破壊処理と反射
+                // ダメージを与える - 乗算方式の攻撃力を使用
+                float damageMultiplier = skillController != null ? skillController.GetDamageMultiplier() : 1.0f;
+                float attackPower = lastHitPlayer != null ? lastHitPlayer.GetAttackPowerMultiplied(damageMultiplier) : 100.0f;
+                bool destroyed = destructible.TakeDamage(attackPower, lastHitPlayer?.gameObject);
+
+            }
 
             // 反射処理
             HandleReflection(other);
@@ -248,7 +253,7 @@ public class Puck : MonoBehaviour
                 Vector3 contactPoint = other.ClosestPoint(transform.position);
                 puckView.PlayHitEffect(contactPoint);
             }
-            
+
             return;
         }
 
