@@ -257,6 +257,13 @@ public class Puck : MonoBehaviour
             return;
         }
 
+        // ミサイルとぶつかった場合は何もしない
+        Missile missile = other.GetComponent<Missile>();
+        if (missile != null)
+        {
+            return;
+        }
+
         // その他の障害物との衝突（壁など）
         HandleReflection(other);
 
