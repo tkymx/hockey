@@ -7,9 +7,40 @@
       "zones": [
         {
           "frontWidth": 15,
-          "backWidth": 40,
+          "backWidth": 30,
           "depth": 60,
-          "playerAreaDepth": 5,
+          "playerAreaDepth": 6,
+          "wall": {
+            "height": 3,
+            "thickness": 0.3,
+            "materialPath": ""
+          },
+          "destructiblePrefabPaths": [
+            "Assets/Resources/Prefabs/Object_In_1"
+          ],
+          "destructiblesCount": 3
+        },
+        {
+          "frontWidth": 20,
+          "backWidth": 40,
+          "depth": 75,
+          "playerAreaDepth": 6,
+          "wall": {
+            "height": 3,
+            "thickness": 0.3,
+            "materialPath": ""
+          },
+          "destructiblePrefabPaths": [
+            "Assets/Resources/Prefabs/Object_In_1",
+            "Assets/Resources/Prefabs/Object_In_2"
+          ],
+          "destructiblesCount": 5
+        },
+        {
+          "frontWidth": 25,
+          "backWidth": 50,
+          "depth": 100,
+          "playerAreaDepth": 7,
           "wall": {
             "height": 3,
             "thickness": 0.3,
@@ -23,9 +54,25 @@
         },
         {
           "frontWidth": 30,
+          "backWidth": 60,
+          "depth": 130,
+          "playerAreaDepth": 7,
+          "wall": {
+            "height": 3,
+            "thickness": 0.3,
+            "materialPath": ""
+          },
+          "destructiblePrefabPaths": [
+            "Assets/Resources/Prefabs/Object_In_2",
+            "Assets/Resources/Prefabs/Object_In_3"
+          ],
+          "destructiblesCount": 10
+        },
+        {
+          "frontWidth": 35,
           "backWidth": 80,
-          "depth": 120,
-          "playerAreaDepth": 5,
+          "depth": 160,
+          "playerAreaDepth": 8,
           "wall": {
             "height": 3,
             "thickness": 0.3,
@@ -40,19 +87,19 @@
       ],
       "concentricRings": [
         {
-          "minRadius": 5,
-          "maxRadius": 10,
-          "density": 5,
-          "randomOffset": 0.2,
+          "minRadius": 8,
+          "maxRadius": 15,
+          "density": 2,
+          "randomOffset": 0.3,
           "prefabPaths": [
             "Assets/Resources/Prefabs/Object_1"
           ]
         },
         {
-          "minRadius": 12,
-          "maxRadius": 18,
-          "density": 7,
-          "randomOffset": 0.3,
+          "minRadius": 18,
+          "maxRadius": 28,
+          "density": 3,
+          "randomOffset": 0.4,
           "prefabPaths": [
             "Assets/Resources/Prefabs/Object_2"
           ]
@@ -65,10 +112,58 @@
       "groundMaterialPath": "Assets/Resources/Materials/ChallengeGround",
       "zones": [
         {
+          "frontWidth": 15,
+          "backWidth": 25,
+          "depth": 35,
+          "playerAreaDepth": 5,
+          "wall": {
+            "height": 4,
+            "thickness": 0.4,
+            "materialPath": "Assets/Resources/Materials/ChallengeWall"
+          },
+          "destructiblePrefabPaths": [
+            "Assets/Resources/Prefabs/Destructibles/Box2"
+          ],
+          "destructiblesCount": 4
+        },
+        {
           "frontWidth": 18,
           "backWidth": 30,
-          "depth": 25,
-          "playerAreaDepth": 4,
+          "depth": 45,
+          "playerAreaDepth": 5,
+          "wall": {
+            "height": 4,
+            "thickness": 0.4,
+            "materialPath": "Assets/Resources/Materials/ChallengeWall"
+          },
+          "destructiblePrefabPaths": [
+            "Assets/Resources/Prefabs/Destructibles/Box2",
+            "Assets/Resources/Prefabs/Destructibles/Barrel2"
+          ],
+          "destructiblesCount": 8
+        },
+        {
+          "frontWidth": 20,
+          "backWidth": 35,
+          "depth": 55,
+          "playerAreaDepth": 6,
+          "wall": {
+            "height": 4,
+            "thickness": 0.4,
+            "materialPath": "Assets/Resources/Materials/ChallengeWall"
+          },
+          "destructiblePrefabPaths": [
+            "Assets/Resources/Prefabs/Destructibles/Box2",
+            "Assets/Resources/Prefabs/Destructibles/Barrel2",
+            "Assets/Resources/Prefabs/Destructibles/Rock2"
+          ],
+          "destructiblesCount": 12
+        },
+        {
+          "frontWidth": 22,
+          "backWidth": 38,
+          "depth": 65,
+          "playerAreaDepth": 6,
           "wall": {
             "height": 4,
             "thickness": 0.4,
@@ -84,8 +179,8 @@
         {
           "frontWidth": 25,
           "backWidth": 40,
-          "depth": 35,
-          "playerAreaDepth": 4,
+          "depth": 80,
+          "playerAreaDepth": 7,
           "wall": {
             "height": 4,
             "thickness": 0.4,
@@ -102,20 +197,20 @@
       ],
       "concentricRings": [
         {
-          "minRadius": 8,
-          "maxRadius": 15,
-          "density": 8,
-          "randomOffset": 0.25,
+          "minRadius": 10,
+          "maxRadius": 20,
+          "density": 3,
+          "randomOffset": 0.35,
           "prefabPaths": [
             "Assets/Resources/Prefabs/Destructibles/Rock2",
             "Assets/Resources/Prefabs/Destructibles/Crystal1"
           ]
         },
         {
-          "minRadius": 18,
-          "maxRadius": 25,
-          "density": 10,
-          "randomOffset": 0.3,
+          "minRadius": 22,
+          "maxRadius": 32,
+          "density": 4,
+          "randomOffset": 0.4,
           "prefabPaths": [
             "Assets/Resources/Prefabs/Destructibles/Box2",
             "Assets/Resources/Prefabs/Destructibles/Crystal1"
